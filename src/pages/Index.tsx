@@ -85,6 +85,28 @@ const Index = () => {
     fetchSchema();
   }, []);
 
+  // 載入預設值資料（基於 Schema 的 default 欄位）
+  const loadDefaultData = () => {
+    const defaultData: any = {};
+    
+    uiSchema.forEach((field) => {
+      if (field["Input Type"] !== "N/A" && field.default) {
+        // 處理不同類型的預設值
+        let value: any = field.default;
+        
+        if (field["Input Type"] === "checkbox") {
+          value = value === "TRUE" || value === "true";
+        } else if (field["Input Type"] === "number") {
+          value = value ? Number(value) : "";
+        }
+        
+        setNestedValue(defaultData, field.key, value);
+      }
+    });
+    
+    return defaultData;
+  };
+
   // 查詢店家資料
   const handleSearch = async () => {
     setLoading(true);
@@ -95,7 +117,10 @@ const Index = () => {
         const mockData = await response.json();
         
         if (mockData[shopIdInput]) {
-          setShopData(mockData[shopIdInput]);
+          // 合併預設值和 API 資料（API 資料優先）
+          const defaultData = loadDefaultData();
+          const mergedData = { ...defaultData, ...mockData[shopIdInput] };
+          setShopData(mergedData);
           toast.success(`✅ 資料載入成功 (使用範例資料)`);
         } else {
           toast.error(`找不到店家代碼: ${shopIdInput}。\n可用的代碼: ${Object.keys(mockData).join(", ")}`);
@@ -108,7 +133,10 @@ const Index = () => {
         );
 
         if (response.data.result === "OK") {
-          setShopData(response.data.shop_data);
+          // 合併預設值和 API 資料（API 資料優先）
+          const defaultData = loadDefaultData();
+          const mergedData = { ...defaultData, ...response.data.shop_data };
+          setShopData(mergedData);
           toast.success("✅ 資料載入成功 (來自 API)");
         } else {
           toast.error(`查詢失敗: ${response.data.result}`);
@@ -229,8 +257,13 @@ const Index = () => {
       }
     }
 
-    // 取得當前值
-    const currentValue = shopData ? getNestedValue(shopData, field.key) : field.value;
+    // 取得當前值：優先使用 API 資料，其次使用 default 值
+    let currentValue = shopData ? getNestedValue(shopData, field.key) : undefined;
+    
+    // 如果沒有 API 資料或該欄位沒有值，使用 default 值
+    if (currentValue === undefined || currentValue === null || currentValue === "") {
+      currentValue = field.default || field.value;
+    }
 
     // 渲染不同類型的輸入框
     return (
@@ -442,6 +475,8 @@ const Index = () => {
                 💡 <strong>開發模式提示：</strong>目前使用本地範例資料。
                 可用的店家代碼：<code className="bg-background px-2 py-0.5 rounded">tawe_zz001</code>、
                 <code className="bg-background px-2 py-0.5 rounded">tawe_zz002</code>
+                <br />
+                所有欄位會自動填入 Schema 中定義的預設值。
               </div>
             )}
           </CardContent>
