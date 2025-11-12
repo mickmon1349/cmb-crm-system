@@ -49,6 +49,6 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-9,tawe_zz001.isMultiCaller,FALSE,checkbox,選擇類型,,,是否為多叫號機 (true/false)
 1-10,tawe_zz001.name,店家設定示範店1,text,文字輸入,,,店家名稱
 1-11,tawe_zz001.phone,02-85110555,text,文字輸入,,,店家電話
-1-12,tawe_zz001.pinyin,diàn jiā shè dìng shì fàn diàn 1,text,文字輸入,隱藏,,拼音(系統自動產生)
-1-13,tawe_zz001.vendor_id,tawe,text,文字輸入,隱藏,,廠商代碼
+1-12,tawe_zz001.pinyin,diàn jiā shè dìng shì fàn diàn 1,text,文字輸入,單行文字輸入欄位,,拼音(系統自動產生)
+1-13,tawe_zz001.vendor_id,tawe,text,文字輸入,單行文字輸入欄位,,廠商代碼
 1-14,tawe_zz001.zone,新北市,text,文字輸入,,,所在區域
