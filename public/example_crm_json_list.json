@@ -1,0 +1,131 @@
+  {
+    "tawe_zz001": {
+      "active": true,
+      "address": "新北市三重區泰偉電子",
+      "booking": {
+        "phone": "",
+        "phone_hint": "",
+        "url": "",
+        "url_label": ""
+      },
+      "call_modes": {
+        "tawe_zz001": {
+          "caller_notes": "※收到系統叫號後，務必於 10 分鐘內至櫃台排隊，完成預先點餐與結帳取貨。\n※若過號視同放棄，需重新領取號碼單。",
+          "estimate_time": false,
+          "mode": "random",
+          "password": "YV7X+xUEsMckopbXpp5sey+eosV8HYIGxa/fOS69/SU=",
+          "set_params": {
+            "get_num_max": ""
+          }
+        }
+      },
+      "callers": {
+        "tawe_zz001": ""
+      },
+      "get_num": {
+        "_type": "caller",
+        "tawe_zz001": {
+          "_external": false,
+          "auto_get_num": true,
+          "get_num_item_names": [
+            "1~2人",
+            "3~4人",
+            "5~6人",
+            "7~8人"
+          ],
+          "get_num_item_type": "人數",
+          "get_num_limit": true,
+          "get_num_notes": "（請提早到場，等待叫號，過號請重新取號！）",
+          "pre_order_food": "https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E",
+          "reserve_time_limit": "10",
+          "support_reserve_num": true,
+          "get_num_max": 200,
+          "hide_cancel_btn": false,
+          "one_time_limit": false,
+          "hide_get_num_btn": false,
+          "game_start_time": "",
+          "guests_per_game": "",
+          "time_per_game": "",
+          "url": ""
+        }
+      },
+      "google_map": {
+        "address": "",
+        "comment_num": "",
+        "coordinate": {
+          "x": "",
+          "y": ""
+        },
+        "name": "",
+        "star_num": ""
+      },
+      "id": "tawe_zz001",
+      "isMultiCaller": false,
+      "name": "店家設定示範店1",
+      "phone": "02-85110555",
+      "pinyin": "diàn jiā shè dìng shì fàn diàn 1",
+      "vendor_id": "tawe",
+      "zone": "新北市"
+    },
+    "tawe_zz002": {
+      "active": true,
+      "address": "新北市三重區泰偉電子",
+      "booking": {
+        "phone": "",
+        "phone_hint": "",
+        "url": "",
+        "url_label": ""
+      },
+      "call_modes": {
+        "tawe_zz002": {
+          "early_call": 5,
+          "estimate_time": true,
+          "expire_num": true,
+          "mode": "sequential",
+          "num_interval": 2,
+          "password": "YV7X+xUEsMckopbXpp5sey+eosV8HYIGxa/fOS69/SU=",
+          "time_period_items": [
+            "早診",
+            "午診",
+            "晚診",
+            "休診"
+          ]
+        },
+        "tawe_zz003": {
+          "early_call": 5,
+          "estimate_time": true,
+          "expire_num": true,
+          "mode": "sequential",
+          "num_interval": 2,
+          "password": "YV7X+xUEsMckopbXpp5sey+eosV8HYIGxa/fOS69/SU=",
+          "time_period_items": [
+            "早診",
+            "午診",
+            "晚診",
+            "休診"
+          ]
+        }
+      },
+      "callers": {
+        "tawe_zz002": "一診",
+        "tawe_zz003": "二診"
+      },
+      "google_map": {
+        "address": "",
+        "comment_num": "",
+        "coordinate": {
+          "x": "",
+          "y": ""
+        },
+        "name": "",
+        "star_num": ""
+      },
+      "id": "tawe_zz002",
+      "isMultiCaller": true,
+      "name": "店家設定示範店2",
+      "phone": "02-85110555",
+      "pinyin": "diàn jiā shè dìng shì fàn diàn 2",
+      "vendor_id": "tawe",
+      "zone": "新北市"
+    }
+  }
