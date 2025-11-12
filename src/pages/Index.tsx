@@ -55,6 +55,7 @@ const Index = () => {
   const [shopIdInput, setShopIdInput] = useState("tawe_zz001");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [useMockData, setUseMockData] = useState(true); // 預設使用範例資料
   const [toggles, setToggles] = useState<Record<string, boolean>>({
     "tawe_zz001.booking": true,
     "tawe_zz001.call_modes": true,
@@ -88,20 +89,45 @@ const Index = () => {
   const handleSearch = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        "https://line-bot-306511771181.asia-east1.run.app/get_shop_data",
-        { shop_id: shopIdInput }
-      );
-
-      if (response.data.result === "OK") {
-        setShopData(response.data.shop_data);
-        toast.success("資料載入成功");
+      if (useMockData) {
+        // 使用本地範例資料
+        const response = await fetch("/example_crm_json_list.json");
+        const mockData = await response.json();
+        
+        if (mockData[shopIdInput]) {
+          setShopData(mockData[shopIdInput]);
+          toast.success(`✅ 資料載入成功 (使用範例資料)`);
+        } else {
+          toast.error(`找不到店家代碼: ${shopIdInput}。\n可用的代碼: ${Object.keys(mockData).join(", ")}`);
+        }
       } else {
-        toast.error(`查詢失敗: ${response.data.result}`);
+        // 使用真實 API
+        const response = await axios.post(
+          "https://line-bot-306511771181.asia-east1.run.app/get_shop_data",
+          { shop_id: shopIdInput }
+        );
+
+        if (response.data.result === "OK") {
+          setShopData(response.data.shop_data);
+          toast.success("✅ 資料載入成功 (來自 API)");
+        } else {
+          toast.error(`查詢失敗: ${response.data.result}`);
+        }
       }
-    } catch (error) {
-      console.error("API 錯誤:", error);
-      toast.error("查詢失敗，請檢查網路連線");
+    } catch (error: any) {
+      console.error("載入錯誤:", error);
+      
+      if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+        toast.error(
+          "❌ CORS 錯誤：無法連接到 API\n\n" +
+          "建議：\n" +
+          "1. 開啟「開發模式」使用範例資料\n" +
+          "2. 或聯繫後端工程師設定 CORS",
+          { duration: 6000 }
+        );
+      } else {
+        toast.error(`載入失敗: ${error.message || "未知錯誤"}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -111,6 +137,13 @@ const Index = () => {
   const handleSave = async () => {
     if (!shopData) {
       toast.error("無資料可儲存");
+      return;
+    }
+
+    if (useMockData) {
+      toast.info("💡 開發模式：資料已更新（僅前端暫存）\n切換到「生產模式」以儲存至伺服器", {
+        duration: 5000,
+      });
       return;
     }
 
@@ -126,13 +159,17 @@ const Index = () => {
       );
 
       if (response.data.result === "OK") {
-        toast.success("儲存成功");
+        toast.success("✅ 儲存成功");
       } else {
         toast.error(`儲存失敗: ${response.data.result}`);
       }
-    } catch (error) {
-      console.error("API 錯誤:", error);
-      toast.error("儲存失敗，請檢查網路連線");
+    } catch (error: any) {
+      console.error("儲存錯誤:", error);
+      if (error.code === "ERR_NETWORK") {
+        toast.error("❌ 無法連接到 API，請檢查 CORS 設定");
+      } else {
+        toast.error(`儲存失敗: ${error.message || "未知錯誤"}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -337,7 +374,29 @@ const Index = () => {
             <CardTitle className="text-3xl font-bold">CRM 店家管理系統</CardTitle>
             <CardDescription>元資料驅動的店家資料管理介面</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* 模式切換 */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="mockMode"
+                  checked={useMockData}
+                  onCheckedChange={(checked) => setUseMockData(checked as boolean)}
+                />
+                <Label htmlFor="mockMode" className="cursor-pointer font-medium">
+                  開發模式 (使用本地範例資料)
+                </Label>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {useMockData ? (
+                  <span className="text-success font-medium">✓ 已啟用範例資料</span>
+                ) : (
+                  <span className="text-warning font-medium">⚠ 連接真實 API</span>
+                )}
+              </div>
+            </div>
+
+            {/* 搜尋列 */}
             <div className="flex gap-4">
               <Input
                 placeholder="輸入店家代碼 (例: tawe_zz001)"
@@ -376,6 +435,15 @@ const Index = () => {
                 )}
               </Button>
             </div>
+
+            {/* 提示訊息 */}
+            {useMockData && (
+              <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded border border-primary/20">
+                💡 <strong>開發模式提示：</strong>目前使用本地範例資料。
+                可用的店家代碼：<code className="bg-background px-2 py-0.5 rounded">tawe_zz001</code>、
+                <code className="bg-background px-2 py-0.5 rounded">tawe_zz002</code>
+              </div>
+            )}
           </CardContent>
         </Card>
 
