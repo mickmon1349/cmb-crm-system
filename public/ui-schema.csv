@@ -26,17 +26,17 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-6-2-4,tawe_zz001.get_num.tawe_zz001.get_num_item_type,人數,text,文字輸入,,,取號項目型別
 1-6-2-5,tawe_zz001.get_num.tawe_zz001.get_num_limit,TRUE,checkbox,選擇類型,核取方塊切換,TRUE,是否限制不能重覆取號 (true/false)
 1-6-2-6,tawe_zz001.get_num.tawe_zz001.get_num_notes,（請提早到場，等待叫號，過號請重新取號！）,text,文字輸入,,,取號須知
-1-6-2-3,tawe_zz001.get_num.tawe_zz001.pre_order_food,https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E,url,文字輸入,網址輸入欄位,,預先取餐網址
-1-6-2-4,tawe_zz001.get_num.tawe_zz001.reserve_time_limit,10,text,數字輸入,,10,到號後保留幾分鐘
-1-6-2-5,tawe_zz001.get_num.tawe_zz001.support_reserve_num,TRUE,checkbox,選擇類型,核取方塊切換,TRUE,是否支援到號保留 (true/false)
-1-6-2-6,tawe_zz001.get_num.tawe_zz001.get_num_max,200,number,數字輸入,,200,取號上限 (必須為>=0的數字) (0表示可無限取號)
-1-6-2-7,tawe_zz001.get_num.tawe_zz001.hide_cancel_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取消鈕 (true/false)
-1-6-2-8,tawe_zz001.get_num.tawe_zz001.one_time_limit,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否當天(當時段)只能取號一次 (true/false)
-1-6-2-9,tawe_zz001.get_num.tawe_zz001.hide_get_num_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取號按鈕 (true/false)
-1-6-2-10,tawe_zz001.get_num.tawe_zz001.game_start_time,2025-11-01T14:00:00 (請依照此時間格式寫入),text,文字輸入,example: 2025-11-01T14:00:00,,活動開始時間 ("YYYY-MM-DDThh:mm:ss")
-1-6-2-11,tawe_zz001.get_num.tawe_zz001.guests_per_game,,number,數字輸入,,,每場活動人數
-1-6-2-12,tawe_zz001.get_num.tawe_zz001.time_per_game,,number,數字輸入,,,每場活動時間(分鐘)
-1-6-2-13,tawe_zz001.get_num.tawe_zz001.url,,url,文字輸入,,,外部網頁取號連結
+1-6-2-7,tawe_zz001.get_num.tawe_zz001.pre_order_food,https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E,url,文字輸入,網址輸入欄位,,預先取餐網址
+1-6-2-8,tawe_zz001.get_num.tawe_zz001.reserve_time_limit,10,text,數字輸入,,10,到號後保留幾分鐘
+1-6-2-9,tawe_zz001.get_num.tawe_zz001.support_reserve_num,TRUE,checkbox,選擇類型,核取方塊切換,TRUE,是否支援到號保留 (true/false)
+1-6-2-10,tawe_zz001.get_num.tawe_zz001.get_num_max,200,number,數字輸入,,200,取號上限 (必須為>=0的數字) (0表示可無限取號)
+1-6-2-11,tawe_zz001.get_num.tawe_zz001.hide_cancel_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取消鈕 (true/false)
+1-6-2-12,tawe_zz001.get_num.tawe_zz001.one_time_limit,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否當天(當時段)只能取號一次 (true/false)
+1-6-2-13,tawe_zz001.get_num.tawe_zz001.hide_get_num_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取號按鈕 (true/false)
+1-6-2-14,tawe_zz001.get_num.tawe_zz001.game_start_time,2025-11-01T14:00:00,text,文字輸入,example: 2025-11-01T14:00:00,,活動開始時間 ("YYYY-MM-DDThh:mm:ss")
+1-6-2-15,tawe_zz001.get_num.tawe_zz001.guests_per_game,,number,數字輸入,,,每場活動人數
+1-6-2-16,tawe_zz001.get_num.tawe_zz001.time_per_game,,number,數字輸入,,,每場活動時間(分鐘)
+1-6-2-17,tawe_zz001.get_num.tawe_zz001.url,,url,文字輸入,,,外部網頁取號連結
 1-7,tawe_zz001.google_map,,N/A,N/A,子物件格式中key之名稱,,
 1-7-1,tawe_zz001.google_map.address,,text,文字輸入,,,Google地圖地址
 1-7-2,tawe_zz001.google_map.comment_num,,text,文字輸入,,,評論數量
