@@ -73,25 +73,28 @@ const Index = () => {
       });
   }, []);
 
-  // Load default data from schema
-  const loadDefaultData = (): any => {
-    const defaultData: any = {};
+  // Load data from schema (using "value" column as the actual data)
+  const loadSchemaData = (): any => {
+    const schemaData: any = {};
     
     uiSchema.forEach((field) => {
-      if (field.default && field.key && field["Input Type"] !== "N/A") {
-        let value: any = field.default;
+      // Use "value" column if available, otherwise use "default" column
+      const dataValue = field.value || field.default;
+      
+      if (dataValue && field.key && field["Input Type"] !== "N/A") {
+        let value: any = dataValue;
         
         if (field["Input Type"] === "checkbox") {
-          value = field.default.toUpperCase() === "TRUE";
+          value = String(dataValue).toUpperCase() === "TRUE";
         } else if (field["Input Type"] === "number") {
-          value = parseInt(field.default) || 0;
+          value = parseInt(dataValue) || 0;
         }
         
-        setNestedValue(defaultData, field.key, value);
+        setNestedValue(schemaData, field.key, value);
       }
     });
     
-    return defaultData;
+    return schemaData;
   };
 
   // Handle Search
@@ -136,9 +139,9 @@ const Index = () => {
         toast.success("成功載入資料");
       }
 
-      // Merge with default values
-      const defaultData = loadDefaultData();
-      const mergedData = { ...defaultData, ...data };
+      // Merge with schema values (from "value" column in CSV)
+      const schemaData = loadSchemaData();
+      const mergedData = { ...schemaData, ...data };
       
       setShopData(mergedData);
     } catch (error) {
@@ -194,8 +197,8 @@ const Index = () => {
 
   // Render field based on schema
   const renderField = (field: SchemaField) => {
-    // Skip if describe is "隱藏"
-    if (field.describe === "隱藏") {
+    // Skip if describe is "隱藏" or class is "隱藏" or default is "隱藏"
+    if (field.describe === "隱藏" || field.class === "隱藏" || field.default === "隱藏") {
       return null;
     }
 
@@ -245,7 +248,7 @@ const Index = () => {
       if (key === "tawe_zz001.booking") {
         return (
           <div key={key} className="col-span-2 flex items-center gap-3 my-4">
-            <Label htmlFor="booking-toggle" className={`${getFontSize()} font-semibold`} title={hint}>
+            <Label htmlFor="booking-toggle" className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
             </Label>
             <Checkbox
@@ -261,7 +264,7 @@ const Index = () => {
       if (key === "tawe_zz001.callers") {
         return (
           <div key={key} className="col-span-2 flex items-center justify-between my-4">
-            <Label className={`${getFontSize()} font-semibold`} title={hint}>
+            <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
             </Label>
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">add caller</Button>
@@ -271,7 +274,7 @@ const Index = () => {
       
       return (
         <div key={key} className="col-span-2 mt-4">
-          <Label className={`${getFontSize()} font-semibold`} title={hint}>
+          <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
             {label}
           </Label>
         </div>
@@ -290,7 +293,7 @@ const Index = () => {
             checked={value === true || value === "true"}
             onCheckedChange={(checked) => handleInputChange(key, checked)}
           />
-          <Label htmlFor={key} className="cursor-pointer" title={hint}>
+          <Label htmlFor={key} className="cursor-pointer" title={hint || ""}>
             {label}
           </Label>
         </div>
@@ -302,10 +305,11 @@ const Index = () => {
       if (key === "tawe_zz001.call_modes.tawe_zz001.mode") {
         return (
           <div key={key} className="col-span-2 space-y-2">
-            <Label title={hint}>mode</Label>
+            <Label title={hint || ""}>mode</Label>
             <RadioGroup
               value={value || "random"}
               onValueChange={(val) => handleInputChange(key, val)}
+              className="flex flex-row gap-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="random" id={`${key}-random`} />
@@ -324,10 +328,11 @@ const Index = () => {
       if (key === "tawe_zz001.get_num._type") {
         return (
           <div key={key} className="col-span-2 space-y-2">
-            <Label title={hint}>_type</Label>
+            <Label title={hint || ""}>_type</Label>
             <RadioGroup
               value={value || "caller"}
               onValueChange={(val) => handleInputChange(key, val)}
+              className="flex flex-row gap-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="shop" id={`${key}-shop`} />
@@ -346,7 +351,7 @@ const Index = () => {
     if (inputType === "textarea") {
       return (
         <div key={key} className="col-span-2 space-y-2">
-          <Label htmlFor={key} title={hint}>
+          <Label htmlFor={key} title={hint || ""}>
             {label}
           </Label>
           <textarea
@@ -362,7 +367,7 @@ const Index = () => {
     if (inputType === "number") {
       return (
         <div key={key} className="space-y-2">
-          <Label htmlFor={key} title={hint}>
+          <Label htmlFor={key} title={hint || ""}>
             {label}
           </Label>
           <Input
@@ -378,7 +383,7 @@ const Index = () => {
     if (inputType === "url") {
       return (
         <div key={key} className="col-span-2 space-y-2">
-          <Label htmlFor={key} title={hint}>
+          <Label htmlFor={key} title={hint || ""}>
             {label}
           </Label>
           <Input
@@ -394,7 +399,7 @@ const Index = () => {
     // Default text input
     return (
       <div key={key} className="space-y-2">
-        <Label htmlFor={key} title={hint}>
+        <Label htmlFor={key} title={hint || ""}>
           {label}
         </Label>
         <Input

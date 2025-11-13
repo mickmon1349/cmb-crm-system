@@ -11,10 +11,13 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-4-1,tawe_zz001.call_modes.tawe_zz001,,N/A,N/A,子子物件格式中key之名稱,,
 1-4-1-1,tawe_zz001.call_modes.tawe_zz001.caller_notes,收到系統叫號後，務必於 10 分鐘內至櫃台排隊,text,文字輸入,,,叫號須知
 1-4-1-2,tawe_zz001.call_modes.tawe_zz001.estimate_time,FALSE,checkbox,選擇類型,checkbox only,FALSE,是否顯示預估時間
-1-4-1-3,tawe_zz001.call_modes.tawe_zz001.mode,random,radio,選擇類型,單選按鈕 (random and sequential),random,叫號模式 ("sequential"/"random")
-1-4-1-4,tawe_zz001.call_modes.tawe_zz001.password,YV7X+xUEsMckopbXpp5sey+eosV8HYIGxa/fOS69/SU=,text,文字輸入,!qaz2wsx,,網頁後台的登入密碼 (先sha256，再base64)
-1-4-1-5,tawe_zz001.call_modes.tawe_zz001.set_params,,N/A,N/A,子子子物件格式中key之名稱,,可設定參數列表
-1-4-1-5-1,tawe_zz001.call_modes.tawe_zz001.set_params.get_num_max,,number,數字輸入,,,
+1-4-1-3,tawe_zz001.call_modes.tawe_zz001.expire_num,TRUE,checkbox,選擇類型,核取方塊切換,,(此為"sequential"模式必填項目) 是否有過號功能 (true/false)
+1-4-1-4,tawe_zz001.call_modes.tawe_zz001.mode,random,radio,選擇類型,單選按鈕 (random and sequential),random,叫號模式 ("sequential"/"random")
+1-4-1-5,tawe_zz001.call_modes.tawe_zz001.num_interval,2,number,數字輸入,,,叫號的跳號間隔
+1-4-1-6,tawe_zz001.call_modes.tawe_zz001.password,YV7X+xUEsMckopbXpp5sey+eosV8HYIGxa/fOS69/SU=,text,文字輸入,!qaz2wsx,,網頁後台的登入密碼 (先sha256，再base64)
+1-4-1-7,tawe_zz001.call_modes.tawe_zz001.time_period_items,"[""早診"",""午診"",""晚診"",""休診""]",text,文字輸入,輸入內容為一個array陣列文字.,,時段項目
+1-4-1-8,tawe_zz001.call_modes.tawe_zz001.set_params,,N/A,N/A,子子子物件格式中key之名稱,,可設定參數列表
+1-4-1-8-1,tawe_zz001.call_modes.tawe_zz001.set_params.get_num_max,,number,數字輸入,,,
 1-5,tawe_zz001.callers,,N/A,N/A,子物件格式中key之名稱,,
 1-5-1,tawe_zz001.callers.tawe_zz001,,text,文字輸入,tawe_zz001.id之value內容.,,叫號機名稱(若是單一叫號機，名稱可為空白)
 1-6,tawe_zz001.get_num,,N/A,N/A,子物件格式中key之名稱,,
@@ -34,21 +37,21 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-6-2-12,tawe_zz001.get_num.tawe_zz001.one_time_limit,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否當天(當時段)只能取號一次 (true/false)
 1-6-2-13,tawe_zz001.get_num.tawe_zz001.hide_get_num_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取號按鈕 (true/false)
 1-6-2-14,tawe_zz001.get_num.tawe_zz001.game_start_time,2025-11-01T14:00:00,text,文字輸入,example: 2025-11-01T14:00:00,,活動開始時間 ("YYYY-MM-DDThh:mm:ss")
-1-6-2-15,tawe_zz001.get_num.tawe_zz001.guests_per_game,,number,數字輸入,,,每場活動人數
-1-6-2-16,tawe_zz001.get_num.tawe_zz001.time_per_game,,number,數字輸入,,,每場活動時間(分鐘)
-1-6-2-17,tawe_zz001.get_num.tawe_zz001.url,,url,文字輸入,,,外部網頁取號連結
-1-7,tawe_zz001.google_map,,N/A,N/A,子物件格式中key之名稱,,
-1-7-1,tawe_zz001.google_map.address,,text,文字輸入,,,Google地圖地址
-1-7-2,tawe_zz001.google_map.comment_num,,text,文字輸入,,,評論數量
-1-7-3,tawe_zz001.google_map.coordinate,,N/A,N/A,子子物件格式中key之名稱,,座標
-1-7-3-1,tawe_zz001.google_map.coordinate.x,,text,文字輸入,,,經度
-1-7-3-2,tawe_zz001.google_map.coordinate.y,,text,文字輸入,,,緯度
-1-7-4,tawe_zz001.google_map.name,,text,文字輸入,,,Google地圖名稱
-1-7-5,tawe_zz001.google_map.star_num,,text,文字輸入,,,星級評分
-1-8,tawe_zz001.id,tawe_zz001,text,文字輸入,隱藏,,店家唯一代碼
-1-9,tawe_zz001.isMultiCaller,FALSE,checkbox,選擇類型,,,是否為多叫號機 (true/false)
-1-10,tawe_zz001.name,店家設定示範店1,text,文字輸入,,,店家名稱
+1-6-2-15,tawe_zz001.get_num.tawe_zz001.guests_per_game,,number,數字輸入,,,每場幾人 (必須為>0的數字)
+1-6-2-16,tawe_zz001.get_num.tawe_zz001.time_per_game,,number,數字輸入,,,每場所需時間(分鐘) (必須為>0的數字)
+1-6-2-17,tawe_zz001.get_num.tawe_zz001.url,https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E,url,文字輸入,網址輸入欄位,,若_external=true，此為必填欄位 外部取號網址
+1-7,tawe_zz001.google_map,,N/A,N/A,隱藏,,
+1-7-1,tawe_zz001.google_map.address,,text,文字輸入,隱藏,,不用編輯
+1-7-2,tawe_zz001.google_map.comment_num,,text,文字輸入,隱藏,,不用編輯
+1-7-3,tawe_zz001.google_map.coordinate,,N/A,N/A,隱藏,,
+1-7-3-1,tawe_zz001.google_map.coordinate.x,,text,文字輸入,隱藏,,不用編輯
+1-7-3-2,tawe_zz001.google_map.coordinate.y,,text,文字輸入,隱藏,,不用編輯
+1-7-4,tawe_zz001.google_map.name,,text,文字輸入,隱藏,,不用編輯
+1-7-5,tawe_zz001.google_map.star_num,,text,文字輸入,隱藏,,不用編輯
+1-8,tawe_zz001.id,tawe_zz001,text,文字輸入,隱藏,,店家代碼
+1-9,tawe_zz001.isMultiCaller,FALSE,checkbox,選擇類型,隱藏,,是否有多部叫號機 (true/false)
+1-10,tawe_zz001.name,店家設定示範店1,text,文字輸入,,,店家名稱 (至少二字)
 1-11,tawe_zz001.phone,02-85110555,text,文字輸入,,,店家電話
-1-12,tawe_zz001.pinyin,diàn jiā shè dìng shì fàn diàn 1,text,文字輸入,單行文字輸入欄位,,拼音(系統自動產生)
-1-13,tawe_zz001.vendor_id,tawe,text,文字輸入,單行文字輸入欄位,,廠商代碼
-1-14,tawe_zz001.zone,新北市,text,文字輸入,,,所在區域
+1-12,tawe_zz001.pinyin,diàn jiā shè dìng shì fàn diàn 1,text,文字輸入,單行文字輸入欄位,,店家名稱的漢語拼音
+1-13,tawe_zz001.vendor_id,tawe,text,文字輸入,單行文字輸入欄位,,叫號機供應商代碼 (固定"tawe")
+1-14,tawe_zz001.zone,新北市,text,文字輸入,,,地區
