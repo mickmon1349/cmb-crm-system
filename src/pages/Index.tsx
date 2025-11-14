@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,9 +48,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [useMockData, setUseMockData] = useState(true);
-  const [toggles, setToggles] = useState<Record<string, boolean>>({
-    "tawe_zz001.booking": false
-  });
+  const [toggles, setToggles] = useState<Record<string, boolean>>({});
 
   // Load UI Schema from CSV
   useEffect(() => {
@@ -81,10 +79,34 @@ const Index = () => {
         } else if (field["Input Type"] === "number") {
           value = parseInt(dataValue) || 0;
         }
-        setNestedValue(schemaData, field.key, value);
+        // Replace first level with dynamic shop_id
+        const dynamicKey = field.key.replace(/^[^.]+/, shopIdInput);
+        setNestedValue(schemaData, dynamicKey, value);
       }
     });
     return schemaData;
+  };
+
+  // Get caller keys from shopData
+  const getCallerKeys = (): string[] => {
+    if (!shopData || !shopIdInput) return [];
+    const callersPath = `${shopIdInput}.callers`;
+    const callers = getNestedValue(shopData, callersPath);
+    if (!callers || typeof callers !== 'object') return [];
+    return Object.keys(callers);
+  };
+
+  // Get additional caller keys (excluding the main shop_id)
+  const getAdditionalCallerKeys = (): string[] => {
+    const callerKeys = getCallerKeys();
+    return callerKeys.filter(key => key !== shopIdInput);
+  };
+
+  // Check if isMultiCaller is true
+  const isMultiCaller = (): boolean => {
+    if (!shopData || !shopIdInput) return false;
+    const isMulti = getNestedValue(shopData, `${shopIdInput}.isMultiCaller`);
+    return isMulti === true || isMulti === "true";
   };
 
   // Handle Search
@@ -128,6 +150,11 @@ const Index = () => {
         ...data
       };
       setShopData(mergedData);
+      
+      // Initialize toggles for booking
+      setToggles({
+        [`${shopIdInput}.booking`]: false
+      });
     } catch (error) {
       console.error("Search error:", error);
       toast.error("查詢失敗，請檢查網路連線");
@@ -178,12 +205,13 @@ const Index = () => {
   };
 
   // Render field based on schema
-  const renderField = (field: SchemaField) => {
+  const renderField = (field: SchemaField, overrideKey?: string) => {
     // Skip if describe is "隱藏" or class is "隱藏" or default is "隱藏"
     if (field.describe === "隱藏" || field.class === "隱藏" || field.default === "隱藏") {
       return null;
     }
-    const key = field.key;
+    // Use overrideKey if provided (for additional callers), otherwise replace first level with shop_id
+    const key = overrideKey || field.key.replace(/^[^.]+/, shopIdInput);
     const inputType = field["Input Type"];
     const hint = field["key之參數hint說明"];
     const nestingLevel = getNestingLevel(key);
@@ -197,7 +225,8 @@ const Index = () => {
     };
 
     // Check if this is a conditional field under booking
-    if (key.startsWith("tawe_zz001.booking.") && !toggles["tawe_zz001.booking"]) {
+    const bookingToggleKey = `${shopIdInput}.booking`;
+    if (key.startsWith(`${shopIdInput}.booking.`) && !toggles[bookingToggleKey]) {
       return null;
     }
 
@@ -222,7 +251,7 @@ const Index = () => {
       }
 
       // Special handling for booking toggle
-      if (key === "tawe_zz001.booking") {
+      if (key === `${shopIdInput}.booking`) {
         return <div key={key} className="col-span-2 flex items-center gap-3 my-4">
             <Label htmlFor="booking-toggle" className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
@@ -231,13 +260,25 @@ const Index = () => {
           </div>;
       }
 
-      // Special handling for callers with add button
-      if (key === "tawe_zz001.callers") {
-        return <div key={key} className="col-span-2 flex items-center justify-between my-4">
-            <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
-              {label}
-            </Label>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">add caller</Button>
+      // Special handling for callers with dynamic list and add button
+      if (key === `${shopIdInput}.callers`) {
+        const callerKeys = getCallerKeys();
+        return <div key={key} className="col-span-2 my-4">
+            <div className="flex items-center justify-between mb-2">
+              <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
+                {label}
+              </Label>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">add caller</Button>
+            </div>
+            {callerKeys.length > 0 && (
+              <div className="ml-4 space-y-1">
+                {callerKeys.map(callerKey => (
+                  <div key={callerKey} className="text-base text-foreground">
+                    {callerKey}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>;
       }
       return <div key={key} className="col-span-2 mt-4">
@@ -259,8 +300,8 @@ const Index = () => {
         </div>;
     }
     if (inputType === "radio") {
-      // Special handling for mode field
-      if (key === "tawe_zz001.call_modes.tawe_zz001.mode") {
+      // Special handling for mode field (dynamic for all callers)
+      if (key.includes(".call_modes.") && key.endsWith(".mode")) {
         return <div key={key} className="col-span-2 space-y-2">
             <Label title={hint || ""}>mode</Label>
             <RadioGroup value={value || "random"} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
@@ -277,7 +318,7 @@ const Index = () => {
       }
 
       // Special handling for _type field
-      if (key === "tawe_zz001.get_num._type") {
+      if (key === `${shopIdInput}.get_num._type`) {
         return <div key={key} className="col-span-2 space-y-2">
             <Label title={hint || ""}>_type</Label>
             <RadioGroup value={value || "caller"} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
@@ -363,6 +404,43 @@ const Index = () => {
             </div> : <>
               <div className="grid grid-cols-2 gap-4">
                 {uiSchema.map(field => renderField(field))}
+                
+                {/* Render additional call_modes for multi-caller mode */}
+                {isMultiCaller() && getAdditionalCallerKeys().map(additionalCallerKey => {
+                  // Create a section header for additional caller
+                  const additionalCallerFields: JSX.Element[] = [];
+                  
+                  additionalCallerFields.push(
+                    <div key={`${additionalCallerKey}-header`} className="col-span-2 mt-6 mb-2">
+                      <hr className="border-border mb-4" />
+                      <h2 className="text-2xl font-bold text-foreground">
+                        [ {additionalCallerKey} call_modes 表單資料 ]
+                      </h2>
+                    </div>
+                  );
+                  
+                  // Render call_modes fields for this additional caller
+                  uiSchema.forEach(field => {
+                    // Find fields that match the call_modes pattern for the first caller
+                    const firstCallerPattern = `${shopIdInput}.call_modes.${shopIdInput}`;
+                    if (field.key.startsWith(firstCallerPattern)) {
+                      // Replace the caller ID with the additional caller ID
+                      const relativePath = field.key.substring(firstCallerPattern.length);
+                      const newKey = `${shopIdInput}.call_modes.${additionalCallerKey}${relativePath}`;
+                      
+                      // Skip if it's a hidden field
+                      if (field.describe !== "隱藏" && field.class !== "隱藏" && field.default !== "隱藏") {
+                        additionalCallerFields.push(
+                          <React.Fragment key={newKey}>
+                            {renderField(field, newKey)}
+                          </React.Fragment>
+                        );
+                      }
+                    }
+                  });
+                  
+                  return additionalCallerFields;
+                })}
               </div>
 
               {/* Save Button */}
