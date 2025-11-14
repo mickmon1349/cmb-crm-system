@@ -9,7 +9,6 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import axios from "axios";
-
 interface SchemaField {
   num: string;
   key: string;
@@ -42,7 +41,6 @@ const setNestedValue = (obj: any, path: string, value: any): void => {
 const getNestingLevel = (key: string): number => {
   return key.split('.').length;
 };
-
 const Index = () => {
   const [uiSchema, setUiSchema] = useState<SchemaField[]>([]);
   const [shopData, setShopData] = useState<any>(null);
@@ -51,49 +49,41 @@ const Index = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [useMockData, setUseMockData] = useState(true);
   const [toggles, setToggles] = useState<Record<string, boolean>>({
-    "tawe_zz001.booking": false,
+    "tawe_zz001.booking": false
   });
 
   // Load UI Schema from CSV
   useEffect(() => {
-    fetch("/ui-schema.csv")
-      .then((response) => response.text())
-      .then((csvText) => {
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            setUiSchema(results.data as SchemaField[]);
-          },
-        });
-      })
-      .catch((error) => {
-        console.error("Error loading UI schema:", error);
-        toast.error("載入UI結構定義失敗");
+    fetch("/ui-schema.csv").then(response => response.text()).then(csvText => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: results => {
+          setUiSchema(results.data as SchemaField[]);
+        }
       });
+    }).catch(error => {
+      console.error("Error loading UI schema:", error);
+      toast.error("載入UI結構定義失敗");
+    });
   }, []);
 
   // Load data from schema (using "value" column as the actual data)
   const loadSchemaData = (): any => {
     const schemaData: any = {};
-    
-    uiSchema.forEach((field) => {
+    uiSchema.forEach(field => {
       // Use "value" column if available, otherwise use "default" column
       const dataValue = field.value || field.default;
-      
       if (dataValue && field.key && field["Input Type"] !== "N/A") {
         let value: any = dataValue;
-        
         if (field["Input Type"] === "checkbox") {
           value = String(dataValue).toUpperCase() === "TRUE";
         } else if (field["Input Type"] === "number") {
           value = parseInt(dataValue) || 0;
         }
-        
         setNestedValue(schemaData, field.key, value);
       }
     });
-    
     return schemaData;
   };
 
@@ -103,46 +93,40 @@ const Index = () => {
       toast.error("請輸入店家代碼");
       return;
     }
-
     setIsLoading(true);
-
     try {
       let data;
-      
       if (useMockData) {
         // Use mock data from JSON file
         const response = await fetch("/example_crm_json_list.json");
         const jsonData = await response.json();
         data = jsonData[shopIdInput];
-        
         if (!data) {
           toast.error("找不到該店家資料");
           setIsLoading(false);
           return;
         }
-        
         toast.success("成功載入資料 (開發模式)");
       } else {
         // Call actual API
-        const response = await axios.post(
-          "https://line-bot-306511771181.asia-east1.run.app/get_shop_data",
-          { shop_id: shopIdInput }
-        );
-
+        const response = await axios.post("https://line-bot-306511771181.asia-east1.run.app/get_shop_data", {
+          shop_id: shopIdInput
+        });
         if (response.data.result !== "OK") {
           toast.error(`查詢失敗: ${response.data.result}`);
           setIsLoading(false);
           return;
         }
-
         data = response.data.shop_data;
         toast.success("成功載入資料");
       }
 
       // Merge with schema values (from "value" column in CSV)
       const schemaData = loadSchemaData();
-      const mergedData = { ...schemaData, ...data };
-      
+      const mergedData = {
+        ...schemaData,
+        ...data
+      };
       setShopData(mergedData);
     } catch (error) {
       console.error("Search error:", error);
@@ -158,15 +142,12 @@ const Index = () => {
       toast.error("沒有資料可儲存");
       return;
     }
-
     if (useMockData) {
       toast.info("開發模式下不會實際儲存至伺服器");
       console.log("Save data:", shopData);
       return;
     }
-
     setIsSaving(true);
-
     try {
       // Implement save API call here
       toast.success("儲存成功");
@@ -181,17 +162,18 @@ const Index = () => {
   // Handle input change
   const handleInputChange = (key: string, value: any) => {
     if (!shopData) return;
-    
-    const newData = { ...shopData };
+    const newData = {
+      ...shopData
+    };
     setNestedValue(newData, key, value);
     setShopData(newData);
   };
 
   // Handle toggle change
   const handleToggle = (key: string) => {
-    setToggles((prev) => ({
+    setToggles(prev => ({
       ...prev,
-      [key]: !prev[key],
+      [key]: !prev[key]
     }));
   };
 
@@ -201,12 +183,11 @@ const Index = () => {
     if (field.describe === "隱藏" || field.class === "隱藏" || field.default === "隱藏") {
       return null;
     }
-
     const key = field.key;
     const inputType = field["Input Type"];
     const hint = field["key之參數hint說明"];
     const nestingLevel = getNestingLevel(key);
-    
+
     // Calculate font size based on nesting level
     const getFontSize = () => {
       if (nestingLevel === 1) return "text-2xl";
@@ -223,94 +204,66 @@ const Index = () => {
     // Handle N/A (parent objects) - Special rendering for call_modes and get_num
     if (inputType === "N/A") {
       const label = key.split('.').pop() || key;
-      
+
       // Special handling for call_modes
       if (key === "tawe_zz001.call_modes") {
-        return (
-          <div key={key} className="col-span-2 mt-6 mb-2">
+        return <div key={key} className="col-span-2 mt-6 mb-2">
             <hr className="border-border mb-4" />
-            <h2 className="text-2xl font-bold text-foreground">call_modes 表單資料</h2>
-          </div>
-        );
+            <h2 className="text-2xl font-bold text-foreground">[ call_modes 表單資料 ]    </h2>
+          </div>;
       }
-      
+
       // Special handling for get_num
       if (key === "tawe_zz001.get_num") {
-        return (
-          <div key={key} className="col-span-2 mt-6 mb-2">
+        return <div key={key} className="col-span-2 mt-6 mb-2">
             <hr className="border-border mb-4" />
-            <h2 className="text-2xl font-bold text-foreground">get_num 表單資料</h2>
-          </div>
-        );
+            <h2 className="text-2xl font-bold text-foreground">[ get_num 表單資料 ]  </h2>
+          </div>;
       }
-      
+
       // Special handling for booking toggle
       if (key === "tawe_zz001.booking") {
-        return (
-          <div key={key} className="col-span-2 flex items-center gap-3 my-4">
+        return <div key={key} className="col-span-2 flex items-center gap-3 my-4">
             <Label htmlFor="booking-toggle" className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
             </Label>
-            <Checkbox
-              id="booking-toggle"
-              checked={toggles[key]}
-              onCheckedChange={() => handleToggle(key)}
-            />
-          </div>
-        );
+            <Checkbox id="booking-toggle" checked={toggles[key]} onCheckedChange={() => handleToggle(key)} />
+          </div>;
       }
-      
+
       // Special handling for callers with add button
       if (key === "tawe_zz001.callers") {
-        return (
-          <div key={key} className="col-span-2 flex items-center justify-between my-4">
+        return <div key={key} className="col-span-2 flex items-center justify-between my-4">
             <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
             </Label>
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">add caller</Button>
-          </div>
-        );
+          </div>;
       }
-      
-      return (
-        <div key={key} className="col-span-2 mt-4">
+      return <div key={key} className="col-span-2 mt-4">
           <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
             {label}
           </Label>
-        </div>
-      );
+        </div>;
     }
-
     const value = shopData ? getNestedValue(shopData, key) : field.default;
     const label = key.split('.').pop() || key;
 
     // Render based on input type
     if (inputType === "checkbox") {
-      return (
-        <div key={key} className="flex items-center gap-2 col-span-2">
-          <Checkbox
-            id={key}
-            checked={value === true || value === "true"}
-            onCheckedChange={(checked) => handleInputChange(key, checked)}
-          />
+      return <div key={key} className="flex items-center gap-2 col-span-2">
+          <Checkbox id={key} checked={value === true || value === "true"} onCheckedChange={checked => handleInputChange(key, checked)} />
           <Label htmlFor={key} className="cursor-pointer" title={hint || ""}>
             {label}
           </Label>
-        </div>
-      );
+        </div>;
     }
-
     if (inputType === "radio") {
       // Special handling for mode field
       if (key === "tawe_zz001.call_modes.tawe_zz001.mode") {
-        return (
-          <div key={key} className="col-span-2 space-y-2">
+        return <div key={key} className="col-span-2 space-y-2">
             <Label title={hint || ""}>mode</Label>
-            <RadioGroup
-              value={value || "random"}
-              onValueChange={(val) => handleInputChange(key, val)}
-              className="flex flex-row gap-4"
-            >
+            <RadioGroup value={value || "random"} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="random" id={`${key}-random`} />
                 <Label htmlFor={`${key}-random`} className="cursor-pointer">random</Label>
@@ -320,20 +273,14 @@ const Index = () => {
                 <Label htmlFor={`${key}-sequential`} className="cursor-pointer">sequential</Label>
               </div>
             </RadioGroup>
-          </div>
-        );
+          </div>;
       }
-      
+
       // Special handling for _type field
       if (key === "tawe_zz001.get_num._type") {
-        return (
-          <div key={key} className="col-span-2 space-y-2">
+        return <div key={key} className="col-span-2 space-y-2">
             <Label title={hint || ""}>_type</Label>
-            <RadioGroup
-              value={value || "caller"}
-              onValueChange={(val) => handleInputChange(key, val)}
-              className="flex flex-row gap-4"
-            >
+            <RadioGroup value={value || "caller"} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="shop" id={`${key}-shop`} />
                 <Label htmlFor={`${key}-shop`} className="cursor-pointer">shop</Label>
@@ -343,77 +290,43 @@ const Index = () => {
                 <Label htmlFor={`${key}-caller`} className="cursor-pointer">caller</Label>
               </div>
             </RadioGroup>
-          </div>
-        );
+          </div>;
       }
     }
-
     if (inputType === "textarea") {
-      return (
-        <div key={key} className="col-span-2 space-y-2">
+      return <div key={key} className="col-span-2 space-y-2">
           <Label htmlFor={key} title={hint || ""}>
             {label}
           </Label>
-          <textarea
-            id={key}
-            value={value || ""}
-            onChange={(e) => handleInputChange(key, e.target.value)}
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
-      );
+          <textarea id={key} value={value || ""} onChange={e => handleInputChange(key, e.target.value)} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
+        </div>;
     }
-
     if (inputType === "number") {
-      return (
-        <div key={key} className="space-y-2">
+      return <div key={key} className="space-y-2">
           <Label htmlFor={key} title={hint || ""}>
             {label}
           </Label>
-          <Input
-            id={key}
-            type="number"
-            value={value || ""}
-            onChange={(e) => handleInputChange(key, parseInt(e.target.value) || 0)}
-          />
-        </div>
-      );
+          <Input id={key} type="number" value={value || ""} onChange={e => handleInputChange(key, parseInt(e.target.value) || 0)} />
+        </div>;
     }
-
     if (inputType === "url") {
-      return (
-        <div key={key} className="col-span-2 space-y-2">
+      return <div key={key} className="col-span-2 space-y-2">
           <Label htmlFor={key} title={hint || ""}>
             {label}
           </Label>
-          <Input
-            id={key}
-            type="url"
-            value={value || ""}
-            onChange={(e) => handleInputChange(key, e.target.value)}
-          />
-        </div>
-      );
+          <Input id={key} type="url" value={value || ""} onChange={e => handleInputChange(key, e.target.value)} />
+        </div>;
     }
 
     // Default text input
-    return (
-      <div key={key} className="space-y-2">
+    return <div key={key} className="space-y-2">
         <Label htmlFor={key} title={hint || ""}>
           {label}
         </Label>
-        <Input
-          id={key}
-          type="text"
-          value={value || ""}
-          onChange={(e) => handleInputChange(key, e.target.value)}
-        />
-      </div>
-    );
+        <Input id={key} type="text" value={value || ""} onChange={e => handleInputChange(key, e.target.value)} />
+      </div>;
   };
-
-  return (
-    <div className="min-h-screen bg-primary py-8 px-4">
+  return <div className="min-h-screen bg-primary py-8 px-4">
       <Card className="max-w-4xl mx-auto bg-white shadow-xl">
         <CardHeader className="bg-primary text-primary-foreground">
           <CardTitle className="text-3xl text-center font-bold">叫叫找顧客管理系統</CardTitle>
@@ -428,11 +341,7 @@ const Index = () => {
             <Label htmlFor="dev-mode" className="cursor-pointer">
               開發模式 (Development Mode)
             </Label>
-            <Switch
-              id="dev-mode"
-              checked={useMockData}
-              onCheckedChange={setUseMockData}
-            />
+            <Switch id="dev-mode" checked={useMockData} onCheckedChange={setUseMockData} />
           </div>
 
           {/* Search Section */}
@@ -441,50 +350,30 @@ const Index = () => {
               <Label htmlFor="shop_id" className="text-lg font-semibold">
                 shop_id:
               </Label>
-              <Input
-                id="shop_id"
-                value={shopIdInput}
-                onChange={(e) => setShopIdInput(e.target.value)}
-                placeholder="請輸入店家代碼"
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
+              <Input id="shop_id" value={shopIdInput} onChange={e => setShopIdInput(e.target.value)} placeholder="請輸入店家代碼" onKeyDown={e => e.key === "Enter" && handleSearch()} />
             </div>
-            <Button
-              onClick={handleSearch}
-              disabled={isLoading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-            >
+            <Button onClick={handleSearch} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
               {isLoading ? "查詢中..." : "Search"}
             </Button>
           </div>
 
           {/* Form Fields */}
-          {!shopData ? (
-            <div className="text-center py-12 text-muted-foreground">
+          {!shopData ? <div className="text-center py-12 text-muted-foreground">
               請輸入店家代碼並點擊 Search 按鈕查詢資料
-            </div>
-          ) : (
-            <>
+            </div> : <>
               <div className="grid grid-cols-2 gap-4">
-                {uiSchema.map((field) => renderField(field))}
+                {uiSchema.map(field => renderField(field))}
               </div>
 
               {/* Save Button */}
               <div className="flex justify-end pt-4">
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-                >
+                <Button onClick={handleSave} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
                   {isSaving ? "儲存中..." : "儲存"}
                 </Button>
               </div>
-            </>
-          )}
+            </>}
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
