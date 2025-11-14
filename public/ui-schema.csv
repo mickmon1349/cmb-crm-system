@@ -18,8 +18,20 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-4-1-7,tawe_zz001.call_modes.tawe_zz001.time_period_items,"[""早診"",""午診"",""晚診"",""休診""]",text,文字輸入,輸入內容為一個array陣列文字.,,時段項目
 1-4-1-8,tawe_zz001.call_modes.tawe_zz001.set_params,,N/A,N/A,子子子物件格式中key之名稱,,可設定參數列表
 1-4-1-8-1,tawe_zz001.call_modes.tawe_zz001.set_params.get_num_max,,number,數字輸入,,,
-1-5,tawe_zz001.callers,,N/A,N/A,子物件格式中key之名稱,,
-1-5-1,tawe_zz001.callers.tawe_zz001,,text,文字輸入,tawe_zz001.id之value內容.,,叫號機名稱(若是單一叫號機，名稱可為空白)
+1-4-2,tawe_zz001.call_modes.tawe_zz002,,N/A,N/A,子子物件格式中key之名稱(多叫號機),,第二叫號機設定
+1-4-2-1,tawe_zz001.call_modes.tawe_zz002.caller_notes,收到系統叫號後，務必於 10 分鐘內至櫃台排隊,text,文字輸入,,,叫號須知
+1-4-2-2,tawe_zz001.call_modes.tawe_zz002.estimate_time,FALSE,checkbox,選擇類型,checkbox only,FALSE,是否顯示預估時間
+1-4-2-3,tawe_zz001.call_modes.tawe_zz002.expire_num,TRUE,checkbox,選擇類型,核取方塊切換,,(此為"sequential"模式必填項目) 是否有過號功能 (true/false)
+1-4-2-4,tawe_zz001.call_modes.tawe_zz002.mode,sequential,radio,選擇類型,單選按鈕 (random and sequential),random,叫號模式 ("sequential"/"random")
+1-4-2-5,tawe_zz001.call_modes.tawe_zz002.num_interval,2,number,數字輸入,,,叫號的跳號間隔
+1-4-2-6,tawe_zz001.call_modes.tawe_zz002.password,YV7X+xUEsMckopbXpp5sey+eosV8HYIGxa/fOS69/SU=,text,文字輸入,!qaz2wsx,,網頁後台的登入密碼 (先sha256，再base64)
+1-4-2-7,tawe_zz001.call_modes.tawe_zz002.time_period_items,"[""早診"",""午診"",""晚診"",""休診""]",text,文字輸入,輸入內容為一個array陣列文字.,,時段項目
+1-4-2-8,tawe_zz001.call_modes.tawe_zz002.set_params,,N/A,N/A,子子子物件格式中key之名稱,,可設定參數列表
+1-4-2-8-1,tawe_zz001.call_modes.tawe_zz002.set_params.get_num_max,,number,數字輸入,,,
+1-5,tawe_zz001.callers,,N/A,N/A,子物件格式中key之名稱,,叫號機列表
+1-5-1,tawe_zz001.callers.tawe_zz001,ㄧ診,text,文字輸入,tawe_zz001.id之value內容.,,叫號機名稱(若是單一叫號機，名稱可為空白)
+1-5-2,tawe_zz001.callers.tawe_zz002,二診,text,文字輸入,tawe_zz002.id之value內容.,,第二叫號機名稱
+1-5-3,tawe_zz001.isMultiCaller,TRUE,checkbox,選擇類型,核取方塊切換,FALSE,是否為多叫號機模式
 1-6,tawe_zz001.get_num,,N/A,N/A,子物件格式中key之名稱,,
 1-6-1,tawe_zz001.get_num._type,caller,radio,選擇類型,單選按鈕 (shop and caller),caller,取號機型別 ("caller"/"shop")
 1-6-2,tawe_zz001.tawe_zz001,,N/A,N/A,子子物件格式中key之名稱,,(若型別="caller", 此為<caller_id>)(若型別="shop", 此為<shop_id>-s)
