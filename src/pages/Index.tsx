@@ -109,6 +109,22 @@ const Index = () => {
     return isMulti === true || isMulti === "true";
   };
 
+  // Get get_num keys from shopData
+  const getGetNumKeys = (): string[] => {
+    if (!shopData || !shopIdInput) return [];
+    const getNumPath = `${shopIdInput}.get_num`;
+    const getNumData = getNestedValue(shopData, getNumPath);
+    if (!getNumData || typeof getNumData !== 'object') return [];
+    // Filter out _type and only return actual caller/shop keys
+    return Object.keys(getNumData).filter(key => key !== '_type');
+  };
+
+  // Get additional get_num keys (excluding the main shop_id)
+  const getAdditionalGetNumKeys = (): string[] => {
+    const getNumKeys = getGetNumKeys();
+    return getNumKeys.filter(key => key !== shopIdInput);
+  };
+
   // Handle Search
   const handleSearch = async () => {
     if (!shopIdInput.trim()) {
@@ -302,9 +318,10 @@ const Index = () => {
     if (inputType === "radio") {
       // Special handling for mode field (dynamic for all callers)
       if (key.includes(".call_modes.") && key.endsWith(".mode")) {
+        const defaultValue = field.default || "sequential";
         return <div key={key} className="col-span-2 space-y-2">
             <Label title={hint || ""}>mode</Label>
-            <RadioGroup value={value || "random"} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
+            <RadioGroup value={value || defaultValue} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="random" id={`${key}-random`} />
                 <Label htmlFor={`${key}-random`} className="cursor-pointer">random</Label>
@@ -319,9 +336,10 @@ const Index = () => {
 
       // Special handling for _type field
       if (key === `${shopIdInput}.get_num._type`) {
+        const defaultValue = field.default || "caller";
         return <div key={key} className="col-span-2 space-y-2">
             <Label title={hint || ""}>_type</Label>
-            <RadioGroup value={value || "caller"} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
+            <RadioGroup value={value || defaultValue} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="shop" id={`${key}-shop`} />
                 <Label htmlFor={`${key}-shop`} className="cursor-pointer">shop</Label>
@@ -440,6 +458,43 @@ const Index = () => {
                   });
                   
                   return additionalCallerFields;
+                })}
+
+                {/* Render additional get_num for multi-caller mode */}
+                {getAdditionalGetNumKeys().map(additionalGetNumKey => {
+                  // Create a section header for additional get_num
+                  const additionalGetNumFields: JSX.Element[] = [];
+                  
+                  additionalGetNumFields.push(
+                    <div key={`${additionalGetNumKey}-get-num-header`} className="col-span-2 mt-6 mb-2">
+                      <hr className="border-border mb-4" />
+                      <h2 className="text-2xl font-bold text-foreground">
+                        [ {additionalGetNumKey} get_num 表單資料 ]
+                      </h2>
+                    </div>
+                  );
+                  
+                  // Render get_num fields for this additional key
+                  uiSchema.forEach(field => {
+                    // Find fields that match the get_num pattern for the first key
+                    const firstGetNumPattern = `${shopIdInput}.get_num.${shopIdInput}`;
+                    if (field.key.startsWith(firstGetNumPattern)) {
+                      // Replace the key with the additional key
+                      const relativePath = field.key.substring(firstGetNumPattern.length);
+                      const newKey = `${shopIdInput}.get_num.${additionalGetNumKey}${relativePath}`;
+                      
+                      // Skip if it's a hidden field
+                      if (field.describe !== "隱藏" && field.class !== "隱藏" && field.default !== "隱藏") {
+                        additionalGetNumFields.push(
+                          <React.Fragment key={newKey}>
+                            {renderField(field, newKey)}
+                          </React.Fragment>
+                        );
+                      }
+                    }
+                  });
+                  
+                  return additionalGetNumFields;
                 })}
               </div>
 
