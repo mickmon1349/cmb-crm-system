@@ -54,7 +54,6 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-6-2-15,tawe_zz001.get_num.tawe_zz001.guests_per_game,,number,數字輸入,,,每場幾人 (必須為>0的數字)
 1-6-2-16,tawe_zz001.get_num.tawe_zz001.time_per_game,,number,數字輸入,,,每場所需時間(分鐘) (必須為>0的數字)
 1-6-2-17,tawe_zz001.get_num.tawe_zz001.url,https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E,url,文字輸入,網址輸入欄位,,若_external=true，此為必填欄位 外部取號網址
-1-6-2-18,tawe_zz001.get_num.tawe_zz001.get_num_btn_name,線上取號,text,文字輸入,,,取號按鈕名稱
 1-6-3,tawe_zz001.get_num.tawe_zz002,,N/A,N/A,子子物件格式中key之名稱,,(若型別="caller", 此為<caller_id>)(若型別="shop", 此為<shop_id>-s)
 1-6-3-1,tawe_zz001.get_num.tawe_zz002._external,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否為外部網頁取號 (true/false)
 1-6-3-2,tawe_zz001.get_num.tawe_zz002.auto_get_num,TRUE,checkbox,選擇類型,核取方塊切換,TRUE,是否掃碼自動取號 (true/false)
@@ -73,7 +72,6 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-6-3-15,tawe_zz001.get_num.tawe_zz002.guests_per_game,,number,數字輸入,,,每場幾人 (必須為>0的數字)
 1-6-3-16,tawe_zz001.get_num.tawe_zz002.time_per_game,,number,數字輸入,,,每場所需時間(分鐘) (必須為>0的數字)
 1-6-3-17,tawe_zz001.get_num.tawe_zz002.url,https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E,url,文字輸入,網址輸入欄位,,若_external=true，此為必填欄位 外部取號網址
-1-6-3-18,tawe_zz001.get_num.tawe_zz002.get_num_btn_name,線上取號,text,文字輸入,,,取號按鈕名稱
 1-7,tawe_zz001.google_map,,N/A,N/A,隱藏,,
 1-7-1,tawe_zz001.google_map.address,,text,文字輸入,隱藏,,不用編輯
 1-7-2,tawe_zz001.google_map.comment_num,,text,文字輸入,隱藏,,不用編輯
@@ -83,9 +81,9 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-7-4,tawe_zz001.google_map.name,,text,文字輸入,隱藏,,不用編輯
 1-7-5,tawe_zz001.google_map.star_num,,text,文字輸入,隱藏,,不用編輯
 1-8,tawe_zz001.id,tawe_zz001,text,文字輸入,隱藏,,店家代碼
-1-9,tawe_zz001.isMultiCaller,FALSE,checkbox,選擇類型,,,是否有多部叫號機 (true/false)
-1-10,tawe_zz001.name,店家設定示範店2,text,文字輸入,,,店家名稱 (至少二字)
+1-9,tawe_zz001.isMultiCaller,FALSE,checkbox,選擇類型,隱藏,,是否有多部叫號機 (true/false)
+1-10,tawe_zz001.name,店家設定示範店1,text,文字輸入,,,店家名稱 (至少二字)
 1-11,tawe_zz001.phone,02-85110555,text,文字輸入,,,店家電話
-1-12,tawe_zz001.pinyin,diàn jiā shè dìng shì fàn diàn 2,text,文字輸入,單行文字輸入欄位,,店家名稱的漢語拼音
+1-12,tawe_zz001.pinyin,diàn jiā shè dìng shì fàn diàn 1,text,文字輸入,單行文字輸入欄位,,店家名稱的漢語拼音
 1-13,tawe_zz001.vendor_id,tawe,text,文字輸入,單行文字輸入欄位,,叫號機供應商代碼 (固定"tawe")
 1-14,tawe_zz001.zone,新北市,text,文字輸入,,,地區
