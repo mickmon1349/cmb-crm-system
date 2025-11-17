@@ -50,7 +50,7 @@ num,key,value,Input Type,class,describe,default,key之參數hint說明
 1-6-2-11,tawe_zz001.get_num.tawe_zz001.hide_cancel_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取消鈕 (true/false)
 1-6-2-12,tawe_zz001.get_num.tawe_zz001.one_time_limit,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否當天(當時段)只能取號一次 (true/false)
 1-6-2-13,tawe_zz001.get_num.tawe_zz001.hide_get_num_btn,FALSE,checkbox,選擇類型,核取方塊切換,FALSE,是否隱藏取號按鈕 (true/false)
-1-6-2-14,tawe_zz001.get_num.tawe_zz001.game_start_time,2025-11-01T14:00:00,text,文字輸入,example: 2025-11-01T14:00:00,,活動開始時間 ("YYYY-MM-DDThh:mm:ss")
+1-6-2-14,tawe_zz001.get_num.tawe_zz001.game_start_time,,text,文字輸入,example: 2025-11-01T14:00:00,,活動開始時間 ("YYYY-MM-DDThh:mm:ss")
 1-6-2-15,tawe_zz001.get_num.tawe_zz001.guests_per_game,,number,數字輸入,,,每場幾人 (必須為>0的數字)
 1-6-2-16,tawe_zz001.get_num.tawe_zz001.time_per_game,,number,數字輸入,,,每場所需時間(分鐘) (必須為>0的數字)
 1-6-2-17,tawe_zz001.get_num.tawe_zz001.url,https://qrorder.lcc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E9%A0%90%E9%BB%9E,url,文字輸入,網址輸入欄位,,若_external=true，此為必填欄位 外部取號網址
