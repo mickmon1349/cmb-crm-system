@@ -150,21 +150,41 @@ const Index = () => {
         const response = await axios.post("https://line-bot-306511771181.asia-east1.run.app/get_shop_data", {
           shop_id: shopIdInput
         });
-        if (response.data.result !== "OK") {
+        if (response.data.result !== "ok" && response.data.result !== "OK") {
           toast.error(`查詢失敗: ${response.data.result}`);
           setIsLoading(false);
           return;
         }
+        // Extract shop_data from response
         data = response.data.shop_data;
+        if (!data) {
+          toast.error("找不到該店家資料");
+          setIsLoading(false);
+          return;
+        }
         toast.success("成功載入資料");
       }
 
+      // Wrap data in shop_id structure
+      const wrappedData = {
+        [shopIdInput]: data
+      };
+      
       // Merge with schema values (from "value" column in CSV)
       const schemaData = loadSchemaData();
       const mergedData = {
         ...schemaData,
-        ...data
+        ...wrappedData
       };
+      
+      // Auto-calculate isMultiCaller based on callers count
+      const callersPath = `${shopIdInput}.callers`;
+      const callers = getNestedValue(mergedData, callersPath);
+      if (callers && typeof callers === 'object') {
+        const callerCount = Object.keys(callers).length;
+        setNestedValue(mergedData, `${shopIdInput}.isMultiCaller`, callerCount > 1);
+      }
+      
       setShopData(mergedData);
       
       // Initialize toggles for booking
@@ -233,7 +253,22 @@ const Index = () => {
     const nestingLevel = getNestingLevel(key);
 
     // Calculate font size based on nesting level
+    // Main shop info fields (address, isMultiCaller, name, phone, pinyin, vendor_id, zone) should match booking level
+    const mainShopInfoFields = [
+      `${shopIdInput}.address`,
+      `${shopIdInput}.isMultiCaller`,
+      `${shopIdInput}.name`,
+      `${shopIdInput}.phone`,
+      `${shopIdInput}.pinyin`,
+      `${shopIdInput}.vendor_id`,
+      `${shopIdInput}.zone`
+    ];
+    
     const getFontSize = () => {
+      // Main shop info fields and booking level should be text-xl
+      if (mainShopInfoFields.includes(key) || key === `${shopIdInput}.booking`) {
+        return "text-xl";
+      }
       if (nestingLevel === 1) return "text-2xl";
       if (nestingLevel === 2) return "text-xl";
       if (nestingLevel === 3) return "text-lg";
@@ -421,7 +456,25 @@ const Index = () => {
               請輸入店家代碼並點擊 Search 按鈕查詢資料
             </div> : <>
               <div className="grid grid-cols-2 gap-4">
-                {uiSchema.map(field => renderField(field))}
+                {/* Render fields in specific order: address, isMultiCaller, name, phone, pinyin, vendor_id, zone first */}
+                {uiSchema.filter(field => field.key === `tawe_zz001.address`).map(field => renderField(field))}
+                {uiSchema.filter(field => field.key === `tawe_zz001.isMultiCaller`).map(field => renderField(field))}
+                {uiSchema.filter(field => field.key === `tawe_zz001.name`).map(field => renderField(field))}
+                {uiSchema.filter(field => field.key === `tawe_zz001.phone`).map(field => renderField(field))}
+                {uiSchema.filter(field => field.key === `tawe_zz001.pinyin`).map(field => renderField(field))}
+                {uiSchema.filter(field => field.key === `tawe_zz001.vendor_id`).map(field => renderField(field))}
+                {uiSchema.filter(field => field.key === `tawe_zz001.zone`).map(field => renderField(field))}
+                
+                {/* Render remaining fields */}
+                {uiSchema.filter(field => 
+                  field.key !== `tawe_zz001.address` &&
+                  field.key !== `tawe_zz001.isMultiCaller` &&
+                  field.key !== `tawe_zz001.name` &&
+                  field.key !== `tawe_zz001.phone` &&
+                  field.key !== `tawe_zz001.pinyin` &&
+                  field.key !== `tawe_zz001.vendor_id` &&
+                  field.key !== `tawe_zz001.zone`
+                ).map(field => renderField(field))}
                 
                 {/* Render additional call_modes for multi-caller mode */}
                 {isMultiCaller() && getAdditionalCallerKeys().map(additionalCallerKey => {
