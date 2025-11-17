@@ -102,11 +102,11 @@ const Index = () => {
     return callerKeys.filter(key => key !== shopIdInput);
   };
 
-  // Check if isMultiCaller is true
+  // Check if isMultiCaller is true (dynamically calculated based on callers count)
   const isMultiCaller = (): boolean => {
     if (!shopData || !shopIdInput) return false;
-    const isMulti = getNestedValue(shopData, `${shopIdInput}.isMultiCaller`);
-    return isMulti === true || isMulti === "true";
+    const callerKeys = getCallerKeys();
+    return callerKeys.length >= 2;
   };
 
   // Get get_num keys from shopData
@@ -220,20 +220,56 @@ const Index = () => {
     }));
   };
 
+  // Group fields by their category for better organization
+  const getFieldGroup = (field: SchemaField): 'reordered' | 'anchor' | 'other' => {
+    const key = field.key.replace(/^[^.]+/, shopIdInput);
+    
+    // Define reordered block (will be grouped together and sorted by num)
+    const reorderedKeys = [
+      `${shopIdInput}.active`,
+      `${shopIdInput}.address`,
+      `${shopIdInput}.booking`,
+      `${shopIdInput}.name`,
+      `${shopIdInput}.phone`,
+      `${shopIdInput}.pinyin`,
+      `${shopIdInput}.vendor_id`,
+      `${shopIdInput}.zone`
+    ];
+    
+    // Define anchor fields (keep in original position)
+    const anchorKeys = [
+      `${shopIdInput}.id`,
+      `${shopIdInput}.call_modes`,
+      `${shopIdInput}.callers`,
+      `${shopIdInput}.get_num`
+    ];
+    
+    if (reorderedKeys.some(k => key === k || key.startsWith(k + '.'))) return 'reordered';
+    if (anchorKeys.some(k => key === k || key.startsWith(k + '.'))) return 'anchor';
+    return 'other';
+  };
+
   // Render field based on schema
-  const renderField = (field: SchemaField, overrideKey?: string) => {
+  const renderField = (field: SchemaField, overrideKey?: string, isInReorderedBlock = false) => {
     // Skip if describe is "隱藏" or class is "隱藏" or default is "隱藏"
     if (field.describe === "隱藏" || field.class === "隱藏" || field.default === "隱藏") {
       return null;
     }
+    
+    // Skip isMultiCaller at 1-5-3 position (we'll render it in reordered block instead)
+    if (field.num === "1-5-3" && field.key.includes("isMultiCaller")) {
+      return null;
+    }
+    
     // Use overrideKey if provided (for additional callers), otherwise replace first level with shop_id
     const key = overrideKey || field.key.replace(/^[^.]+/, shopIdInput);
     const inputType = field["Input Type"];
     const hint = field["key之參數hint說明"];
     const nestingLevel = getNestingLevel(key);
 
-    // Calculate font size based on nesting level
+    // Calculate font size based on nesting level and reordered block
     const getFontSize = () => {
+      if (isInReorderedBlock) return "text-sm"; // 14px equivalent
       if (nestingLevel === 1) return "text-2xl";
       if (nestingLevel === 2) return "text-xl";
       if (nestingLevel === 3) return "text-lg";
@@ -268,11 +304,22 @@ const Index = () => {
 
       // Special handling for booking toggle
       if (key === `${shopIdInput}.booking`) {
-        return <div key={key} className="col-span-2 flex items-center gap-3 my-4">
+        return <div key={key} className="col-span-2 flex items-center gap-3 my-2">
             <Label htmlFor="booking-toggle" className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
             </Label>
             <Checkbox id="booking-toggle" checked={toggles[key]} onCheckedChange={() => handleToggle(key)} />
+          </div>;
+      }
+      
+      // Special handling for isMultiCaller (display only, computed dynamically)
+      if (key === `${shopIdInput}.isMultiCaller`) {
+        const isMulti = isMultiCaller();
+        return <div key={key} className="flex items-center gap-2 col-span-2">
+            <Checkbox id={key} checked={isMulti} disabled />
+            <Label htmlFor={key} className="cursor-not-allowed opacity-70" title={hint || ""}>
+              {label} (自動計算)
+            </Label>
           </div>;
       }
 
@@ -421,7 +468,39 @@ const Index = () => {
               請輸入店家代碼並點擊 Search 按鈕查詢資料
             </div> : <>
               <div className="grid grid-cols-2 gap-4">
-                {uiSchema.map(field => renderField(field))}
+                {/* Reordered Block - Basic Shop Info */}
+                <div className="col-span-2 space-y-3 p-4 bg-muted/30 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">基本店家資訊</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {uiSchema
+                      .filter(field => getFieldGroup(field) === 'reordered')
+                      .sort((a, b) => {
+                        const numA = a.num.split('-').map(n => parseInt(n));
+                        const numB = b.num.split('-').map(n => parseInt(n));
+                        for (let i = 0; i < Math.max(numA.length, numB.length); i++) {
+                          if ((numA[i] || 0) !== (numB[i] || 0)) {
+                            return (numA[i] || 0) - (numB[i] || 0);
+                          }
+                        }
+                        return 0;
+                      })
+                      .map(field => renderField(field, undefined, true))
+                    }
+                    {/* Render isMultiCaller in reordered block (dynamically computed) */}
+                    {uiSchema.find(f => f.num === "1-9" && f.key.includes("isMultiCaller")) && (
+                      <div className="flex items-center gap-2 col-span-2">
+                        <Checkbox id={`${shopIdInput}.isMultiCaller`} checked={isMultiCaller()} disabled />
+                        <Label htmlFor={`${shopIdInput}.isMultiCaller`} className="cursor-not-allowed opacity-70 text-sm" 
+                               title={uiSchema.find(f => f.num === "1-9")?.["key之參數hint說明"] || ""}>
+                          isMultiCaller (自動計算)
+                        </Label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Anchor Fields - Render in original order */}
+                {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => renderField(field))}
                 
                 {/* Render additional call_modes for multi-caller mode */}
                 {isMultiCaller() && getAdditionalCallerKeys().map(additionalCallerKey => {
