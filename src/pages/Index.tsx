@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import axios from "axios";
+import pinyin from "pinyin";
 interface SchemaField {
   num: string;
   key: string;
@@ -44,7 +45,7 @@ const getNestingLevel = (key: string): number => {
 const Index = () => {
   const [uiSchema, setUiSchema] = useState<SchemaField[]>([]);
   const [shopData, setShopData] = useState<any>(null);
-  const [shopIdInput, setShopIdInput] = useState("tawe_zz001");
+  const [shopIdInput, setShopIdInput] = useState("taiwan_zz001");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [useMockData, setUseMockData] = useState(true);
@@ -209,6 +210,16 @@ const Index = () => {
       ...shopData
     };
     setNestedValue(newData, key, value);
+    
+    // Auto-populate pinyin when name changes
+    if (key === `${shopIdInput}.name` && typeof value === 'string') {
+      const pinyinResult = pinyin(value, {
+        style: pinyin.STYLE_TONE,
+        heteronym: false
+      }).map(item => item[0]).join(' ');
+      setNestedValue(newData, `${shopIdInput}.pinyin`, pinyinResult);
+    }
+    
     setShopData(newData);
   };
 
@@ -287,7 +298,7 @@ const Index = () => {
       const label = key.split('.').pop() || key;
 
       // Special handling for call_modes
-      if (key === "tawe_zz001.call_modes") {
+      if (key.endsWith(".call_modes")) {
         return <div key={key} className="col-span-2 mt-6 mb-2">
             <hr className="border-border mb-4" />
             <h2 className="text-2xl font-bold text-foreground">[ call_modes 表單資料 ]    </h2>
@@ -295,7 +306,7 @@ const Index = () => {
       }
 
       // Special handling for get_num
-      if (key === "tawe_zz001.get_num") {
+      if (key.endsWith(".get_num")) {
         return <div key={key} className="col-span-2 mt-6 mb-2">
             <hr className="border-border mb-4" />
             <h2 className="text-2xl font-bold text-foreground">[ get_num 表單資料 ]  </h2>
@@ -410,7 +421,7 @@ const Index = () => {
     if (inputType === "number") {
       return <div key={key} className="space-y-2">
           <Label htmlFor={key} title={hint || ""}>
-            {label}
+            {label === "game_start_time" ? "game_start_time (yyyy-mm-ddTHH:mm:ss)" : label}
           </Label>
           <Input id={key} type="number" value={value || ""} onChange={e => handleInputChange(key, parseInt(e.target.value) || 0)} />
         </div>;
@@ -427,7 +438,7 @@ const Index = () => {
     // Default text input
     return <div key={key} className="space-y-2">
         <Label htmlFor={key} title={hint || ""}>
-          {label}
+          {label === "game_start_time" ? "game_start_time (yyyy-mm-ddTHH:mm:ss)" : label}
         </Label>
         <Input id={key} type="text" value={value || ""} onChange={e => handleInputChange(key, e.target.value)} />
       </div>;
@@ -500,7 +511,28 @@ const Index = () => {
                 </div>
                 
                 {/* Anchor Fields - Render in original order */}
-                {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => renderField(field))}
+                {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => {
+                  const renderedField = renderField(field);
+                  
+                  // After rendering get_num header, add the first caller key header
+                  if (field.key.endsWith('.get_num') && field["Input Type"] === "N/A") {
+                    const getNumKeys = getGetNumKeys();
+                    const firstCallerKey = getNumKeys[0];
+                    
+                    return (
+                      <React.Fragment key={field.key}>
+                        {renderedField}
+                        {firstCallerKey && (
+                          <div className="col-span-2 mt-4 mb-2">
+                            <h3 className="text-lg font-semibold text-foreground">{firstCallerKey}</h3>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    );
+                  }
+                  
+                  return renderedField;
+                })}
               </div>
 
               {/* Save Button */}
