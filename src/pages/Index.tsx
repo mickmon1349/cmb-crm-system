@@ -338,6 +338,7 @@ const Index = () => {
       if (key === `${shopIdInput}.callers`) {
         const callerKeys = getCallerKeys();
         return <div key={key} className="col-span-2 my-4">
+            <hr className="border-border mb-4" />
             <div className="flex items-center justify-between mb-2">
               <Label className={`${getFontSize()} font-semibold`} title={hint || ""}>
                 {label}
@@ -514,21 +515,46 @@ const Index = () => {
                 {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => {
                   const renderedField = renderField(field);
                   
-                  // After rendering get_num header, add the first caller key header
+                  // After rendering get_num header, render fields in specific order: _type, first caller key, then others
                   if (field.key.endsWith('.get_num') && field["Input Type"] === "N/A") {
                     const getNumKeys = getGetNumKeys();
                     const firstCallerKey = getNumKeys[0];
                     
+                    // Find _type field
+                    const typeField = uiSchema.find(f => f.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num._type`);
+                    
+                    // Find first caller key N/A field (e.g., tawe_zz001.get_num.tawe_zz001)
+                    const firstCallerHeaderField = uiSchema.find(f => 
+                      f.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num.${firstCallerKey}` && 
+                      f["Input Type"] === "N/A"
+                    );
+                    
                     return (
                       <React.Fragment key={field.key}>
                         {renderedField}
-                        {firstCallerKey && (
+                        {/* Render _type field first */}
+                        {typeField && renderField(typeField)}
+                        {/* Render first caller key header */}
+                        {firstCallerKey && firstCallerHeaderField && (
                           <div className="col-span-2 mt-4 mb-2">
                             <h3 className="text-lg font-semibold text-foreground">{firstCallerKey}</h3>
                           </div>
                         )}
                       </React.Fragment>
                     );
+                  }
+                  
+                  // Skip rendering _type separately since it's rendered above
+                  if (field.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num._type`) {
+                    return null;
+                  }
+                  
+                  // Skip rendering first caller header separately
+                  const getNumKeys = getGetNumKeys();
+                  const firstCallerKey = getNumKeys[0];
+                  if (field.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num.${firstCallerKey}` && 
+                      field["Input Type"] === "N/A") {
+                    return null;
                   }
                   
                   return renderedField;
