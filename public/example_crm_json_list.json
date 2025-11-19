@@ -1,7 +1,8 @@
 {
-  "taiwan_zz001": {
+  "shop_id": "tawe_zz001",
+  "shop_data": {
     "active": true,
-    "address": "新北市三重區添泰電子",
+    "address": "新北市三重區興德路111-1號10樓",
     "booking": {
       "phone": "",
       "phone_hint": "",
@@ -9,96 +10,77 @@
       "url_label": ""
     },
     "call_modes": {
-      "taiwan_zz001": {
+      "tawe_zz001": {
         "early_call": 5,
-        "caller_notes": "收到系統叫號後，予約6跨 10 分鐘内至號碼台報到",
+        "caller_notes": "收到系統叫號後，預約於 10 分鐘內至櫃台排隊",
         "estimate_time": true,
         "expire_num": true,
         "mode": "sequential",
         "num_interval": 2,
-        "password": "VY7XzuEzMcKcpbXpp5eey+eosV8HY1Gxa//fO5G9/SU=",
+        "password": "YVYXcsUEJKckpbXppS+eyv+eosV8HYlGxa/fO569/SU=",
         "set_params": {
           "get_num_max": ""
         },
-        "time_period_items": [
-          "早餐",
-          "午餐",
-          "晚餐",
-          "宵夜"
-        ]
+        "time_period_items": "["早診","午診","晚診","休診"]"
       },
-      "taiwan_zz002": {
+      "tawe_zz002": {
         "early_call": 5,
-        "caller_notes": "收到系統叫號後，予約6跨 10 分鐘内至號碼台報到",
+        "caller_notes": "收到系統叫號後，預約於 10 分鐘內至櫃台排隊",
         "estimate_time": true,
         "expire_num": true,
         "mode": "sequential",
         "num_interval": 2,
-        "password": "VY7XzxHtsMckobXpp5eey+eosY9HY1Gxa/fO5G9SI=",
+        "password": "YVY7XxvUEbJMckopbXppSeov+eosV8HYlGxaJfO369/SU=",
         "set_params": {
           "get_num_max": ""
         },
-        "time_period_items": [
-          "早餐",
-          "午餐",
-          "晚餐",
-          "宵夜"
-        ]
+        "time_period_items": "["早診","午診","晚診","休診"]"
       }
     },
     "callers": {
-      "taiwan_zz001": "一般",
-      "taiwan_zz002": "一般"
+      "tawe_zz001": "一號",
+      "tawe_zz002": "二號"
     },
     "get_num": {
-      "_type": "caller",
-      "taiwan_zz001": {
-        "_external": false,
+      "type": "caller",
+      "tawe_zz001": {
+        "external": false,
         "auto_get_num": true,
-        "get_num_item_names": [
-          "1-2人",
-          "3-4人",
-          "5-6人",
-          "7-8人"
-        ],
+        "get_num_item_names": "["1-2人","3-4人","5-6人","7-8人"]",
         "get_num_item_type": "人數",
         "get_num_limit": true,
-        "get_num_notes": "（請提早報號，等待叫號。迫號請重新報號！）",
-        "get_num_pre_order_food": "https://provider.loc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E6%A0%BC%E6%BE%B9%E5%9C%8B%E9%9A%9B&",
+        "get_num_notes": "（請提早到場，叫號到號、過號請重新取號！）",
+        "pre_order_food": "https://preorder.loo.com.tw?883&index.aspx?StoreNum&r=188&tableNum=%E8%A0%A0%E8%9F%B9",
         "reserve_time_limit": 10,
         "support_reserve_num": true,
         "get_num_max": 200,
         "hide_cancel_btn": false,
         "one_time_limit": false,
         "hide_get_num_btn": false,
-        "game_start_time": "2025-11-01T14:00:00 (請估照時時格式輸入)",
+        "game_start_time": "2025-11-01T14:00:00 (請您照此時間提式填寫)",
         "guests_per_game": "",
         "time_per_game": "",
-        "url": "https://provider.loc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E6%A0%BC%E6%BE%B9%E5%9C%8B%E9%9A%9B&",
+        "url": "https://preorder.loo.com.tw?883&index.aspx?StoreNum&r=188&tableNum=%E8%A0%A0%E8%9F%B9",
         "get_num_btn_name": "線上取號"
       },
-      "taiwan_zz002": {
-        "_external": false,
+      "tawe_zz002": {
+        "external": false,
         "auto_get_num": true,
-        "get_num_item_names": [
-          "1-2人",
-          "3-4人",
-          "5-6人",
-          "7-8人"
-        ],
+        "get_num_item_names": "["1-2人","3-4人","5-6人","7-8人"]",
         "get_num_item_type": "人數",
         "get_num_limit": true,
-        "get_num_notes": "（請提早報號，等待叫號。迫號請重新報號！）",
-        "pre_order_food": "https://provider.loc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E6%A0%BC%E6%BE%B9%E5%9C%8B%E9%9A%9B&",
+        "get_num_notes": "（請提早到場，叫號到號、過號請重新取號！）",
+        "pre_order_food": "https://preorder.loo.com.tw?883&index.aspx?StoreNum&r=188&tableNum=%E8%A0%A0%E8%9F%B9",
+        "reserve_time_limit": 10,
         "support_reserve_num": true,
         "get_num_max": 200,
         "hide_cancel_btn": false,
         "one_time_limit": false,
         "hide_get_num_btn": false,
-        "game_start_time": "2025-11-01T14:00:00 (請估照時時格式輸入)",
+        "game_start_time": "2025-11-01T14:00:00 (請您照此時間提式填寫)",
         "guests_per_game": "",
         "time_per_game": "",
-        "url": "https://provider.loc.com.tw:8083/index.aspx?StoreNumber=188&tableNum=%E6%A0%BC%E6%BE%B9%E5%9C%8B%E9%9A%9B&",
+        "url": "https://preorder.loo.com.tw?883&index.aspx?StoreNum&r=188&tableNum=%E8%A0%A0%E8%9F%B9",
         "get_num_btn_name": "線上取號"
       }
     },
@@ -112,12 +94,12 @@
       "name": "",
       "star_num": ""
     },
-    "id": "taiwan_zz001",
+    "id": "tawe_zz001",
     "isMultiCaller": true,
-    "name": "店家甚麼示範店1",
-    "phone": "02-85110555",
-    "pinyin": "diàn jiā shé me shì fàn diàn 2",
-    "vendor_id": "taiwan",
-    "zone": "新北市"
+    "name": "叫叫我系統公司",
+    "phone": "02-85110556",
+    "pinyin": "",
+    "vendor_id": "tawe",
+    "zone": "台北市"
   }
 }
