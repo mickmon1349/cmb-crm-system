@@ -142,7 +142,8 @@ const Index = () => {
         }
       });
       
-      const data = response.data;
+      // Extract data for the specific shop_id
+      const data = response.data[shopIdInput];
       if (!data) {
         toast.error("找不到該店家資料");
         setIsLoading(false);
