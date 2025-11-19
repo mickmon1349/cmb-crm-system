@@ -142,8 +142,15 @@ const Index = () => {
         }
       });
       
-      // Extract data for the specific shop_id
-      const data = response.data[shopIdInput];
+      // Check API result
+      if (response.data.result !== "OK") {
+        toast.error(`查詢失敗: ${response.data.result || "未知錯誤"}`);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Extract shop_data from response
+      const data = response.data.shop_data;
       if (!data) {
         toast.error("找不到該店家資料");
         setIsLoading(false);
