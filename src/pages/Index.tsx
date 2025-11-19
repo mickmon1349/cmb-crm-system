@@ -45,7 +45,7 @@ const getNestingLevel = (key: string): number => {
 const Index = () => {
   const [uiSchema, setUiSchema] = useState<SchemaField[]>([]);
   const [shopData, setShopData] = useState<any>(null);
-  const [shopIdInput, setShopIdInput] = useState("taiwan_zz001");
+  const [shopIdInput, setShopIdInput] = useState("tawe_zz001");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [useMockData, setUseMockData] = useState(true);
@@ -80,9 +80,8 @@ const Index = () => {
         } else if (field["Input Type"] === "number") {
           value = parseInt(dataValue) || 0;
         }
-        // Replace first level with dynamic shop_id
-        const dynamicKey = field.key.replace(/^[^.]+/, shopIdInput);
-        setNestedValue(schemaData, dynamicKey, value);
+        // Use key directly as it's already in the correct format (shop_id, shop_data.xxx)
+        setNestedValue(schemaData, field.key, value);
       }
     });
     return schemaData;
@@ -90,17 +89,17 @@ const Index = () => {
 
   // Get caller keys from shopData
   const getCallerKeys = (): string[] => {
-    if (!shopData || !shopIdInput) return [];
-    const callersPath = `${shopIdInput}.callers`;
+    if (!shopData) return [];
+    const callersPath = 'shop_data.callers';
     const callers = getNestedValue(shopData, callersPath);
     if (!callers || typeof callers !== 'object') return [];
     return Object.keys(callers);
   };
 
-  // Get additional caller keys (excluding the main shop_id)
+  // Get additional caller keys (excluding the first caller)
   const getAdditionalCallerKeys = (): string[] => {
     const callerKeys = getCallerKeys();
-    return callerKeys.filter(key => key !== shopIdInput);
+    return callerKeys.slice(1); // Return all except the first one
   };
 
   // Check if isMultiCaller is true (dynamically calculated based on callers count)
@@ -112,18 +111,18 @@ const Index = () => {
 
   // Get get_num keys from shopData
   const getGetNumKeys = (): string[] => {
-    if (!shopData || !shopIdInput) return [];
-    const getNumPath = `${shopIdInput}.get_num`;
+    if (!shopData) return [];
+    const getNumPath = 'shop_data.get_num';
     const getNumData = getNestedValue(shopData, getNumPath);
     if (!getNumData || typeof getNumData !== 'object') return [];
-    // Filter out _type and only return actual caller/shop keys
-    return Object.keys(getNumData).filter(key => key !== '_type');
+    // Filter out type and only return actual caller/shop keys
+    return Object.keys(getNumData).filter(key => key !== 'type');
   };
 
-  // Get additional get_num keys (excluding the main shop_id)
+  // Get additional get_num keys (excluding the first caller)
   const getAdditionalGetNumKeys = (): string[] => {
     const getNumKeys = getGetNumKeys();
-    return getNumKeys.filter(key => key !== shopIdInput);
+    return getNumKeys.slice(1); // Return all except the first one
   };
 
   // Handle Search
@@ -139,12 +138,13 @@ const Index = () => {
         // Use mock data from JSON file
         const response = await fetch("/example_crm_json_list.json");
         const jsonData = await response.json();
-        data = jsonData[shopIdInput];
-        if (!data) {
+        // Check if shop_id matches
+        if (!jsonData.shop_id || jsonData.shop_id !== shopIdInput) {
           toast.error("找不到該店家資料");
           setIsLoading(false);
           return;
         }
+        data = jsonData; // Use entire JSON structure (shop_id + shop_data)
         toast.success("成功載入資料 (開發模式)");
       } else {
         // Call actual API
@@ -156,7 +156,7 @@ const Index = () => {
           setIsLoading(false);
           return;
         }
-        data = response.data.shop_data;
+        data = response.data; // Use entire response (shop_id + shop_data)
         toast.success("成功載入資料");
       }
 
@@ -170,7 +170,7 @@ const Index = () => {
       
       // Initialize toggles for booking
       setToggles({
-        [`${shopIdInput}.booking`]: false
+        'shop_data.booking': false
       });
     } catch (error) {
       console.error("Search error:", error);
@@ -212,12 +212,12 @@ const Index = () => {
     setNestedValue(newData, key, value);
     
     // Auto-populate pinyin when name changes
-    if (key === `${shopIdInput}.name` && typeof value === 'string') {
+    if (key === 'shop_data.name' && typeof value === 'string') {
       const pinyinResult = pinyin(value, {
         style: pinyin.STYLE_TONE,
         heteronym: false
       }).map(item => item[0]).join(' ');
-      setNestedValue(newData, `${shopIdInput}.pinyin`, pinyinResult);
+      setNestedValue(newData, 'shop_data.pinyin', pinyinResult);
     }
     
     setShopData(newData);
@@ -233,26 +233,27 @@ const Index = () => {
 
   // Group fields by their category for better organization
   const getFieldGroup = (field: SchemaField): 'reordered' | 'anchor' | 'other' => {
-    const key = field.key.replace(/^[^.]+/, shopIdInput);
+    const key = field.key; // Use key directly (already in shop_data.xxx format)
     
-    // Define reordered block (will be grouped together and sorted by num)
+    // Fields to reorder into a visual block
     const reorderedKeys = [
-      `${shopIdInput}.active`,
-      `${shopIdInput}.address`,
-      `${shopIdInput}.booking`,
-      `${shopIdInput}.name`,
-      `${shopIdInput}.phone`,
-      `${shopIdInput}.pinyin`,
-      `${shopIdInput}.vendor_id`,
-      `${shopIdInput}.zone`
+      'shop_data.active',
+      'shop_data.address',
+      'shop_data.booking',
+      'shop_data.isMultiCaller',
+      'shop_data.name',
+      'shop_data.phone',
+      'shop_data.pinyin',
+      'shop_data.vendor_id',
+      'shop_data.zone'
     ];
     
     // Define anchor fields (keep in original position)
     const anchorKeys = [
-      `${shopIdInput}.id`,
-      `${shopIdInput}.call_modes`,
-      `${shopIdInput}.callers`,
-      `${shopIdInput}.get_num`
+      'shop_data.id',
+      'shop_data.call_modes',
+      'shop_data.callers',
+      'shop_data.get_num'
     ];
     
     if (reorderedKeys.some(k => key === k || key.startsWith(k + '.'))) return 'reordered';
@@ -267,13 +268,13 @@ const Index = () => {
       return null;
     }
     
-    // Skip isMultiCaller at 1-5-3 position (we'll render it in reordered block instead)
-    if (field.num === "1-5-3" && field.key.includes("isMultiCaller")) {
+    // Skip isMultiCaller at specific position (we'll render it in reordered block instead)
+    if (field.num.startsWith("2-9") && field.key.includes("isMultiCaller")) {
       return null;
     }
     
-    // Use overrideKey if provided (for additional callers), otherwise replace first level with shop_id
-    const key = overrideKey || field.key.replace(/^[^.]+/, shopIdInput);
+    // Use overrideKey if provided (for additional callers), otherwise use key directly
+    const key = overrideKey || field.key;
     const inputType = field["Input Type"];
     const hint = field["key之參數hint說明"];
     const nestingLevel = getNestingLevel(key);
@@ -288,8 +289,8 @@ const Index = () => {
     };
 
     // Check if this is a conditional field under booking
-    const bookingToggleKey = `${shopIdInput}.booking`;
-    if (key.startsWith(`${shopIdInput}.booking.`) && !toggles[bookingToggleKey]) {
+    const bookingToggleKey = 'shop_data.booking';
+    if (key.startsWith('shop_data.booking.') && !toggles[bookingToggleKey]) {
       return null;
     }
 
@@ -314,7 +315,7 @@ const Index = () => {
       }
 
       // Special handling for booking toggle
-      if (key === `${shopIdInput}.booking`) {
+      if (key === 'shop_data.booking') {
         return <div key={key} className="col-span-2 flex items-center gap-3 my-2">
             <Label htmlFor="booking-toggle" className={`${getFontSize()} font-semibold`} title={hint || ""}>
               {label}
@@ -324,7 +325,7 @@ const Index = () => {
       }
       
       // Special handling for isMultiCaller (display only, computed dynamically)
-      if (key === `${shopIdInput}.isMultiCaller`) {
+      if (key === 'shop_data.isMultiCaller') {
         const isMulti = isMultiCaller();
         return <div key={key} className="flex items-center gap-2 col-span-2">
             <Checkbox id={key} checked={isMulti} disabled />
@@ -335,7 +336,7 @@ const Index = () => {
       }
 
       // Special handling for callers with dynamic list and add button
-      if (key === `${shopIdInput}.callers`) {
+      if (key === 'shop_data.callers') {
         const callerKeys = getCallerKeys();
         return <div key={key} className="col-span-2 my-4">
             <hr className="border-border mb-4" />
@@ -393,11 +394,11 @@ const Index = () => {
           </div>;
       }
 
-      // Special handling for _type field
-      if (key === `${shopIdInput}.get_num._type`) {
+      // Handle type field specially (shop/caller radio group)
+      if (key === 'shop_data.get_num.type') {
         const defaultValue = field.default || "caller";
         return <div key={key} className="col-span-2 space-y-2">
-            <Label title={hint || ""}>_type</Label>
+            <Label title={hint || ""}>type</Label>
             <RadioGroup value={value || defaultValue} onValueChange={val => handleInputChange(key, val)} className="flex flex-row gap-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="shop" id={`${key}-shop`} />
@@ -499,11 +500,11 @@ const Index = () => {
                       .map(field => renderField(field, undefined, true))
                     }
                     {/* Render isMultiCaller in reordered block (dynamically computed) */}
-                    {uiSchema.find(f => f.num === "1-9" && f.key.includes("isMultiCaller")) && (
+                    {uiSchema.find(f => f.num === "2-9" && f.key.includes("isMultiCaller")) && (
                       <div className="flex items-center gap-2 col-span-2">
-                        <Checkbox id={`${shopIdInput}.isMultiCaller`} checked={isMultiCaller()} disabled />
-                        <Label htmlFor={`${shopIdInput}.isMultiCaller`} className="cursor-not-allowed opacity-70 text-sm" 
-                               title={uiSchema.find(f => f.num === "1-9")?.["key之參數hint說明"] || ""}>
+                        <Checkbox id="shop_data.isMultiCaller" checked={isMultiCaller()} disabled />
+                        <Label htmlFor="shop_data.isMultiCaller" className="cursor-not-allowed opacity-70 text-sm" 
+                               title={uiSchema.find(f => f.num === "2-9")?.["key之參數hint說明"] || ""}>
                           isMultiCaller (自動計算)
                         </Label>
                       </div>
@@ -515,24 +516,24 @@ const Index = () => {
                 {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => {
                   const renderedField = renderField(field);
                   
-                  // After rendering get_num header, render fields in specific order: _type, first caller key, then others
+                  // After rendering get_num header, render fields in specific order: type, first caller key, then others
                   if (field.key.endsWith('.get_num') && field["Input Type"] === "N/A") {
                     const getNumKeys = getGetNumKeys();
                     const firstCallerKey = getNumKeys[0];
                     
-                    // Find _type field
-                    const typeField = uiSchema.find(f => f.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num._type`);
+                    // Find type field
+                    const typeField = uiSchema.find(f => f.key === 'shop_data.get_num.type');
                     
-                    // Find first caller key N/A field (e.g., tawe_zz001.get_num.tawe_zz001)
+                    // Find first caller key N/A field (e.g., shop_data.get_num.tawe_zz001)
                     const firstCallerHeaderField = uiSchema.find(f => 
-                      f.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num.${firstCallerKey}` && 
+                      f.key === `shop_data.get_num.${firstCallerKey}` && 
                       f["Input Type"] === "N/A"
                     );
                     
                     return (
                       <React.Fragment key={field.key}>
                         {renderedField}
-                        {/* Render _type field first */}
+                        {/* Render type field first */}
                         {typeField && renderField(typeField)}
                         {/* Render first caller key header */}
                         {firstCallerKey && firstCallerHeaderField && (
@@ -544,15 +545,15 @@ const Index = () => {
                     );
                   }
                   
-                  // Skip rendering _type separately since it's rendered above
-                  if (field.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num._type`) {
+                  // Skip rendering type separately since it's rendered above
+                  if (field.key === 'shop_data.get_num.type') {
                     return null;
                   }
                   
                   // Skip rendering first caller header separately
                   const getNumKeys = getGetNumKeys();
                   const firstCallerKey = getNumKeys[0];
-                  if (field.key.replace(/^[^.]+/, shopIdInput) === `${shopIdInput}.get_num.${firstCallerKey}` && 
+                  if (field.key === `shop_data.get_num.${firstCallerKey}` && 
                       field["Input Type"] === "N/A") {
                     return null;
                   }
