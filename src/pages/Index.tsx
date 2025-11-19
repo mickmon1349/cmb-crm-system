@@ -48,7 +48,6 @@ const Index = () => {
   const [shopIdInput, setShopIdInput] = useState("taiwan_zz001");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [useMockData, setUseMockData] = useState(true);
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
 
   // Load UI Schema from CSV
@@ -134,30 +133,20 @@ const Index = () => {
     }
     setIsLoading(true);
     try {
-      let data;
-      if (useMockData) {
-        // Use mock data from JSON file
-        const response = await fetch("/example_crm_json_list.json");
-        const jsonData = await response.json();
-        data = jsonData[shopIdInput];
-        if (!data) {
-          toast.error("找不到該店家資料");
-          setIsLoading(false);
-          return;
+      // Call API with POST request
+      const response = await axios.post("http://localhost:8082/get_shop_data", {
+        shop_id: shopIdInput
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
         }
-        toast.success("成功載入資料 (開發模式)");
-      } else {
-        // Call actual API
-        const response = await axios.post("https://line-bot-306511771181.asia-east1.run.app/get_shop_data", {
-          shop_id: shopIdInput
-        });
-        if (response.data.result !== "OK") {
-          toast.error(`查詢失敗: ${response.data.result}`);
-          setIsLoading(false);
-          return;
-        }
-        data = response.data.shop_data;
-        toast.success("成功載入資料");
+      });
+      
+      const data = response.data;
+      if (!data) {
+        toast.error("找不到該店家資料");
+        setIsLoading(false);
+        return;
       }
 
       // Merge with schema values (from "value" column in CSV)
@@ -172,6 +161,8 @@ const Index = () => {
       setToggles({
         [`${shopIdInput}.booking`]: false
       });
+      
+      toast.success("成功載入資料");
     } catch (error) {
       console.error("Search error:", error);
       toast.error("查詢失敗，請檢查網路連線");
@@ -184,11 +175,6 @@ const Index = () => {
   const handleSave = async () => {
     if (!shopData) {
       toast.error("沒有資料可儲存");
-      return;
-    }
-    if (useMockData) {
-      toast.info("開發模式下不會實際儲存至伺服器");
-      console.log("Save data:", shopData);
       return;
     }
     setIsSaving(true);
@@ -454,14 +440,6 @@ const Index = () => {
         </CardHeader>
         
         <CardContent className="p-6 space-y-6">
-          {/* Development Mode Toggle */}
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-            <Label htmlFor="dev-mode" className="cursor-pointer">
-              開發模式 (Development Mode)
-            </Label>
-            <Switch id="dev-mode" checked={useMockData} onCheckedChange={setUseMockData} />
-          </div>
-
           {/* Search Section */}
           <div className="flex gap-3 items-end">
             <div className="flex-1 space-y-2">
