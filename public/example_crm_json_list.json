@@ -21,7 +21,12 @@
         "set_params": {
           "get_num_max": ""
         },
-        "time_period_items": "["早診","午診","晚診","休診"]"
+        "time_period_items": [
+          "早診",
+          "午診",
+          "晚診",
+          "休診"
+        ]
       },
       "tawe_zz002": {
         "early_call": 5,
@@ -34,19 +39,29 @@
         "set_params": {
           "get_num_max": ""
         },
-        "time_period_items": "["早診","午診","晚診","休診"]"
+        "time_period_items": [
+          "早診",
+          "午診",
+          "晚診",
+          "休診"
+        ]
       }
     },
     "callers": {
-      "tawe_zz001": "一號",
-      "tawe_zz002": "二號"
+      "tawe_zz001": "一診",
+      "tawe_zz002": "二診"
     },
     "get_num": {
       "type": "caller",
       "tawe_zz001": {
         "external": false,
         "auto_get_num": true,
-        "get_num_item_names": "["1-2人","3-4人","5-6人","7-8人"]",
+        "get_num_item_names": [
+          "1-2人",
+          "3-4人",
+          "5-6人",
+          "7-8人"
+        ],
         "get_num_item_type": "人數",
         "get_num_limit": true,
         "get_num_notes": "（請提早到場，叫號到號、過號請重新取號！）",
@@ -66,7 +81,12 @@
       "tawe_zz002": {
         "external": false,
         "auto_get_num": true,
-        "get_num_item_names": "["1-2人","3-4人","5-6人","7-8人"]",
+        "get_num_item_names": [
+          "1-2人",
+          "3-4人",
+          "5-6人",
+          "7-8人"
+        ],
         "get_num_item_type": "人數",
         "get_num_limit": true,
         "get_num_notes": "（請提早到場，叫號到號、過號請重新取號！）",
