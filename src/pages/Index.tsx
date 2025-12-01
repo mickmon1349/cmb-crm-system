@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Papa from "papaparse";
 import axios from "axios";
 import pinyin from "pinyin";
+import { CreateShopForm } from "@/components/CreateShopForm";
 interface SchemaField {
   num: string;
   key: string;
@@ -50,6 +51,7 @@ const Index = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [useMockData, setUseMockData] = useState(true);
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Load UI Schema from CSV
   useEffect(() => {
@@ -447,128 +449,150 @@ const Index = () => {
   };
   return <div className="min-h-screen bg-primary py-8 px-4">
       <Card className="max-w-4xl mx-auto bg-white shadow-xl">
-        <CardHeader className="bg-primary text-primary-foreground">
-          <CardTitle className="text-3xl text-center font-bold">叫叫找顧客管理系統</CardTitle>
-          <CardDescription className="text-primary-foreground/90 text-center">
-            顧客資訊輸入
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="p-6 space-y-6">
-          {/* Development Mode Toggle */}
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-            <Label htmlFor="dev-mode" className="cursor-pointer">
-              開發模式 (Development Mode)
-            </Label>
-            <Switch id="dev-mode" checked={useMockData} onCheckedChange={setUseMockData} />
+        {/* Header with View Switcher */}
+        <div className="bg-primary text-primary-foreground p-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">叫叫我顧客管理系統</h1>
+            <p className="text-primary-foreground/90 mt-1">
+              {showCreateForm ? "新增店家" : "顧客資訊輸入"}
+            </p>
           </div>
-
-          {/* Search Section */}
-          <div className="flex gap-3 items-end">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="shop_id" className="text-lg font-semibold">
-                shop_id:
+          <div className="flex items-center gap-4">
+            {/* Development Mode Toggle */}
+            <div className="flex items-center gap-2 bg-primary-foreground/10 px-4 py-2 rounded-lg">
+              <Label htmlFor="dev-mode" className="cursor-pointer text-sm whitespace-nowrap">
+                開發模式
               </Label>
-              <Input id="shop_id" value={shopIdInput} onChange={e => setShopIdInput(e.target.value)} placeholder="請輸入店家代碼" onKeyDown={e => e.key === "Enter" && handleSearch()} />
+              <Switch id="dev-mode" checked={useMockData} onCheckedChange={setUseMockData} />
             </div>
-            <Button onClick={handleSearch} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
-              {isLoading ? "查詢中..." : "Search"}
+            {/* View Switcher Button */}
+            <Button 
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              variant="secondary"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+            >
+              {showCreateForm ? "取消" : "新增店家"}
             </Button>
           </div>
-
-          {/* Form Fields */}
-          {!shopData ? <div className="text-center py-12 text-muted-foreground">
-              請輸入店家代碼並點擊 Search 按鈕查詢資料
-            </div> : <>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Reordered Block - Basic Shop Info */}
-                <div className="col-span-2 space-y-3 p-4 bg-muted/30 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-3">基本店家資訊</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {uiSchema
-                      .filter(field => getFieldGroup(field) === 'reordered')
-                      .sort((a, b) => {
-                        const numA = a.num.split('-').map(n => parseInt(n));
-                        const numB = b.num.split('-').map(n => parseInt(n));
-                        for (let i = 0; i < Math.max(numA.length, numB.length); i++) {
-                          if ((numA[i] || 0) !== (numB[i] || 0)) {
-                            return (numA[i] || 0) - (numB[i] || 0);
-                          }
-                        }
-                        return 0;
-                      })
-                      .map(field => renderField(field, undefined, true))
-                    }
-                    {/* Render isMultiCaller in reordered block (dynamically computed) */}
-                    {uiSchema.find(f => f.num === "2-9" && f.key.includes("isMultiCaller")) && (
-                      <div className="flex items-center gap-2 col-span-2">
-                        <Checkbox id="shop_data.isMultiCaller" checked={isMultiCaller()} disabled />
-                        <Label htmlFor="shop_data.isMultiCaller" className="cursor-not-allowed opacity-70 text-sm" 
-                               title={uiSchema.find(f => f.num === "2-9")?.["key之參數hint說明"] || ""}>
-                          isMultiCaller (自動計算)
-                        </Label>
-                      </div>
-                    )}
-                  </div>
+        </div>
+        
+        <CardContent className="p-6 space-y-6">
+          {/* Conditional Rendering: Create Form or List View */}
+          {showCreateForm ? (
+            <CreateShopForm 
+              isDevMode={useMockData}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          ) : (
+            <>
+              {/* Search Section */}
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="shop_id" className="text-lg font-semibold">
+                    shop_id:
+                  </Label>
+                  <Input id="shop_id" value={shopIdInput} onChange={e => setShopIdInput(e.target.value)} placeholder="請輸入店家代碼" onKeyDown={e => e.key === "Enter" && handleSearch()} />
                 </div>
-                
-                {/* Anchor Fields - Render in original order */}
-                {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => {
-                  const renderedField = renderField(field);
-                  
-                  // After rendering get_num header, render fields in specific order: type, first caller key, then others
-                  if (field.key.endsWith('.get_num') && field["Input Type"] === "N/A") {
-                    const getNumKeys = getGetNumKeys();
-                    const firstCallerKey = getNumKeys[0];
-                    
-                    // Find type field
-                    const typeField = uiSchema.find(f => f.key === 'shop_data.get_num.type');
-                    
-                    // Find first caller key N/A field (e.g., shop_data.get_num.tawe_zz001)
-                    const firstCallerHeaderField = uiSchema.find(f => 
-                      f.key === `shop_data.get_num.${firstCallerKey}` && 
-                      f["Input Type"] === "N/A"
-                    );
-                    
-                    return (
-                      <React.Fragment key={field.key}>
-                        {renderedField}
-                        {/* Render type field first */}
-                        {typeField && renderField(typeField)}
-                        {/* Render first caller key header */}
-                        {firstCallerKey && firstCallerHeaderField && (
-                          <div className="col-span-2 mt-4 mb-2">
-                            <h3 className="text-lg font-semibold text-foreground">{firstCallerKey}</h3>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    );
-                  }
-                  
-                  // Skip rendering type separately since it's rendered above
-                  if (field.key === 'shop_data.get_num.type') {
-                    return null;
-                  }
-                  
-                  // Skip rendering first caller header separately
-                  const getNumKeys = getGetNumKeys();
-                  const firstCallerKey = getNumKeys[0];
-                  if (field.key === `shop_data.get_num.${firstCallerKey}` && 
-                      field["Input Type"] === "N/A") {
-                    return null;
-                  }
-                  
-                  return renderedField;
-                })}
-              </div>
-
-              {/* Save Button */}
-              <div className="flex justify-end pt-4">
-                <Button onClick={handleSave} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
-                  {isSaving ? "儲存中..." : "儲存"}
+                <Button onClick={handleSearch} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
+                  {isLoading ? "查詢中..." : "Search"}
                 </Button>
               </div>
-            </>}
+
+              {/* Form Fields */}
+              {!shopData ? <div className="text-center py-12 text-muted-foreground">
+                  請輸入店家代碼並點擊 Search 按鈕查詢資料
+                </div> : <>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Reordered Block - Basic Shop Info */}
+                    <div className="col-span-2 space-y-3 p-4 bg-muted/30 rounded-lg">
+                      <h3 className="text-lg font-semibold mb-3">基本店家資訊</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {uiSchema
+                          .filter(field => getFieldGroup(field) === 'reordered')
+                          .sort((a, b) => {
+                            const numA = a.num.split('-').map(n => parseInt(n));
+                            const numB = b.num.split('-').map(n => parseInt(n));
+                            for (let i = 0; i < Math.max(numA.length, numB.length); i++) {
+                              if ((numA[i] || 0) !== (numB[i] || 0)) {
+                                return (numA[i] || 0) - (numB[i] || 0);
+                              }
+                            }
+                            return 0;
+                          })
+                          .map(field => renderField(field, undefined, true))
+                        }
+                        {/* Render isMultiCaller in reordered block (dynamically computed) */}
+                        {uiSchema.find(f => f.num === "2-9" && f.key.includes("isMultiCaller")) && (
+                          <div className="flex items-center gap-2 col-span-2">
+                            <Checkbox id="shop_data.isMultiCaller" checked={isMultiCaller()} disabled />
+                            <Label htmlFor="shop_data.isMultiCaller" className="cursor-not-allowed opacity-70 text-sm" 
+                                   title={uiSchema.find(f => f.num === "2-9")?.["key之參數hint說明"] || ""}>
+                              isMultiCaller (自動計算)
+                            </Label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Anchor Fields - Render in original order */}
+                    {uiSchema.filter(field => getFieldGroup(field) === 'anchor').map(field => {
+                      const renderedField = renderField(field);
+                      
+                      // After rendering get_num header, render fields in specific order: type, first caller key, then others
+                      if (field.key.endsWith('.get_num') && field["Input Type"] === "N/A") {
+                        const getNumKeys = getGetNumKeys();
+                        const firstCallerKey = getNumKeys[0];
+                        
+                        // Find type field
+                        const typeField = uiSchema.find(f => f.key === 'shop_data.get_num.type');
+                        
+                        // Find first caller key N/A field (e.g., shop_data.get_num.tawe_zz001)
+                        const firstCallerHeaderField = uiSchema.find(f => 
+                          f.key === `shop_data.get_num.${firstCallerKey}` && 
+                          f["Input Type"] === "N/A"
+                        );
+                        
+                        return (
+                          <React.Fragment key={field.key}>
+                            {renderedField}
+                            {/* Render type field first */}
+                            {typeField && renderField(typeField)}
+                            {/* Render first caller key header */}
+                            {firstCallerKey && firstCallerHeaderField && (
+                              <div className="col-span-2 mt-4 mb-2">
+                                <h3 className="text-lg font-semibold text-foreground">{firstCallerKey}</h3>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        );
+                      }
+                      
+                      // Skip rendering type separately since it's rendered above
+                      if (field.key === 'shop_data.get_num.type') {
+                        return null;
+                      }
+                      
+                      // Skip rendering first caller header separately
+                      const getNumKeys = getGetNumKeys();
+                      const firstCallerKey = getNumKeys[0];
+                      if (field.key === `shop_data.get_num.${firstCallerKey}` && 
+                          field["Input Type"] === "N/A") {
+                        return null;
+                      }
+                      
+                      return renderedField;
+                    })}
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="flex justify-end pt-4">
+                    <Button onClick={handleSave} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
+                      {isSaving ? "儲存中..." : "儲存"}
+                    </Button>
+                  </div>
+                </>}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>;
