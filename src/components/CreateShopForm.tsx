@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import pinyin from "pinyin";
@@ -77,11 +78,22 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       callers: {},
       call_modes: {},
       get_num: {
-        type: "caller"
+        _type: "caller"
+      },
+      google_map: {
+        address: "",
+        comment_num: 0,
+        coordinate: {
+          x: 0,
+          y: 0
+        },
+        name: "",
+        star_num: 0
       }
     }
   });
   const [callerIds, setCallerIds] = useState<string[]>([]);
+  const [selectedCallerId, setSelectedCallerId] = useState<string>("");
 
   // Load schema
   useEffect(() => {
@@ -167,9 +179,9 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       time_period_items: []
     };
     
-    // Initialize get_num with defaults
+    // Initialize get_num with defaults (note: _external not external)
     newData.shop_data.get_num[newCallerId] = {
-      external: false,
+      _external: false,
       auto_get_num: false,
       get_num_item_names: [],
       get_num_item_type: '',
@@ -189,12 +201,13 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       get_num_btn_name: '線上取號'
     };
     
-    // Update isMultiCaller
+    // Update isMultiCaller and select the new caller
     const newCallerIds = [...callerIds, newCallerId];
     newData.shop_data.isMultiCaller = newCallerIds.length > 1;
     
     setFormData(newData);
     setCallerIds(newCallerIds);
+    setSelectedCallerId(newCallerId);
     toast.success("已新增叫號機");
   };
 
@@ -208,6 +221,11 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     
     const newCallerIds = callerIds.filter(id => id !== callerId);
     newData.shop_data.isMultiCaller = newCallerIds.length > 1;
+    
+    // Update selected caller if the deleted one was selected
+    if (selectedCallerId === callerId) {
+      setSelectedCallerId(newCallerIds.length > 0 ? newCallerIds[0] : "");
+    }
     
     setFormData(newData);
     setCallerIds(newCallerIds);
@@ -350,12 +368,13 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     );
   };
 
-  // Get base fields (excluding dynamic caller fields)
+  // Get base fields (excluding dynamic caller fields and google_map)
   const getBaseFields = () => {
     return schema.filter(f => 
       !f.key.includes('call_modes.tawe_zz001') && 
       !f.key.includes('get_num.tawe_zz001') &&
       !f.key.includes('callers.tawe_zz001') &&
+      !f.key.includes('google_map') &&
       f.key !== 'shop_data.call_modes' &&
       f.key !== 'shop_data.get_num' &&
       f.key !== 'shop_data.callers'
@@ -370,12 +389,17 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     );
   };
 
-  // Get caller-specific fields for get_num
+  // Get caller-specific fields for get_num (excluding _type which is static)
   const getGetNumFields = () => {
     return schema.filter(f => 
       f.key.includes('get_num.tawe_zz001') &&
-      !f.key.startsWith('shop_data.get_num._type')
+      !f.key.includes('get_num._type')
     );
+  };
+
+  // Get the _type field for get_num
+  const getGetNumTypeField = () => {
+    return schema.find(f => f.key === 'shop_data.get_num._type');
   };
 
   return (
@@ -399,74 +423,137 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
 
       <Separator />
 
+      {/* Get Num Type Radio (Static - Shared across all callers) */}
       <Card className="bg-card/50">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">叫號機列表 (callers)</CardTitle>
-          <Button
-            type="button"
-            onClick={handleAddCaller}
-            className="bg-yellow-500 hover:bg-yellow-600 text-black"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            新增叫號機
-          </Button>
+        <CardHeader>
+          <CardTitle className="text-lg">取號機型別設定</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {callerIds.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              尚未新增叫號機，請點擊上方按鈕新增
-            </p>
-          ) : (
-            callerIds.map((callerId, index) => (
-              <Card key={callerId} className="border-2 border-destructive/20">
-                <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base text-primary">
-                      叫號機 #{index + 1}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">UUID: {callerId}</p>
+        <CardContent>
+          {getGetNumTypeField() && (
+            <div className="space-y-2">
+              <Label>取號機型別 (_type)</Label>
+              <RadioGroup 
+                value={formData.shop_data.get_num._type || "caller"} 
+                onValueChange={(value) => handleChange('shop_data.get_num._type', value)}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="caller" id="type-caller" />
+                    <Label htmlFor="type-caller">Caller</Label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="shop" id="type-shop" />
+                    <Label htmlFor="type-shop">Shop</Label>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      <Card className="bg-card/50">
+        <CardHeader>
+          <CardTitle className="text-lg">叫號機管理</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {callerIds.length === 0 ? (
+            <div className="text-center py-8 space-y-4">
+              <p className="text-muted-foreground">尚未新增叫號機</p>
+              <Button
+                type="button"
+                onClick={handleAddCaller}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                新增叫號機
+              </Button>
+            </div>
+          ) : (
+            <Tabs value={selectedCallerId} onValueChange={setSelectedCallerId} className="w-full">
+              <div className="flex gap-6">
+                {/* Left Column: Caller List */}
+                <div className="w-64 space-y-2">
+                  <TabsList className="flex flex-col h-auto w-full">
+                    {callerIds.map((callerId, index) => (
+                      <TabsTrigger 
+                        key={callerId} 
+                        value={callerId}
+                        className="w-full justify-start text-left"
+                      >
+                        {formData.shop_data.callers[callerId] || `叫號機 ${index + 1}`}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
                   <Button
                     type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteCaller(callerId)}
+                    onClick={handleAddCaller}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Plus className="mr-2 h-4 w-4" />
+                    新增叫號機
                   </Button>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-6">
-                  {/* Caller Name */}
-                  <div className="space-y-2">
-                    <Label>叫號機名稱</Label>
-                    <Input
-                      value={formData.shop_data.callers[callerId] || ""}
-                      onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
-                    />
-                  </div>
+                </div>
 
-                  <Separator />
+                {/* Right Column: Caller Details */}
+                <div className="flex-1">
+                  {callerIds.map((callerId, index) => (
+                    <TabsContent key={callerId} value={callerId} className="mt-0">
+                      <Card className="border-2 border-primary/20">
+                        <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
+                          <div className="space-y-1">
+                            <CardTitle className="text-base text-primary">
+                              叫號機 #{index + 1}
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground">UUID: {callerId}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteCaller(callerId)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-6">
+                          {/* Caller Name */}
+                          <div className="space-y-2">
+                            <Label>叫號機名稱</Label>
+                            <Input
+                              value={formData.shop_data.callers[callerId] || ""}
+                              onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
+                            />
+                          </div>
 
-                  {/* Call Modes Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-primary">叫號模式設定 (call_modes)</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {getCallModeFields().map(field => renderField(field, callerId))}
-                    </div>
-                  </div>
+                          <Separator />
 
-                  <Separator />
+                          {/* Call Modes Section */}
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">叫號模式設定 (call_modes)</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              {getCallModeFields().map(field => renderField(field, callerId))}
+                            </div>
+                          </div>
 
-                  {/* Get Num Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-primary">取號設定 (get_num)</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {getGetNumFields().map(field => renderField(field, callerId))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                          <Separator />
+
+                          {/* Get Num Section */}
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">取號設定 (get_num)</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              {getGetNumFields().map(field => renderField(field, callerId))}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  ))}
+                </div>
+              </div>
+            </Tabs>
           )}
         </CardContent>
       </Card>
