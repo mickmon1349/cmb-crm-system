@@ -69,7 +69,6 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       zone: "",
       id: "",
       booking: {
-        booking: false,
         phone: "",
         phone_hint: "",
         url: "",
@@ -94,6 +93,7 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
   });
   const [callerIds, setCallerIds] = useState<string[]>([]);
   const [selectedCallerId, setSelectedCallerId] = useState<string>("");
+  const [bookingEnabled, setBookingEnabled] = useState<boolean>(false);
 
   // Initialize with one default caller
   useEffect(() => {
@@ -243,13 +243,12 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
   const transformDataForBackend = (data: any) => {
     const transformed = JSON.parse(JSON.stringify(data)); // Deep clone
     
-    // 1. Transform booking structure (remove nested boolean, keep only the fields)
-    const bookingEnabled = data.shop_data.booking?.booking || false;
+    // 1. Transform booking structure based on UI toggle state
     transformed.shop_data.booking = {
-      phone: data.shop_data.booking?.phone || "",
-      phone_hint: data.shop_data.booking?.phone_hint || "",
-      url: data.shop_data.booking?.url || "",
-      url_label: data.shop_data.booking?.url_label || ""
+      phone: bookingEnabled ? (data.shop_data.booking?.phone || "") : "",
+      phone_hint: bookingEnabled ? (data.shop_data.booking?.phone_hint || "") : "",
+      url: bookingEnabled ? (data.shop_data.booking?.url || "") : "",
+      url_label: bookingEnabled ? (data.shop_data.booking?.url_label || "") : ""
     };
     
     // 2. Transform UUID-keyed objects to Business ID-keyed objects
@@ -333,6 +332,25 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     const defaultValue = field.default;
     
     if (inputType === "N/A") return null;
+    
+    // Handle booking toggle separately
+    if (field.key === 'shop_data.booking') {
+      return (
+        <div key={field.key} className="space-y-2">
+          <Label htmlFor="booking-toggle" className="text-sm">
+            預約設定
+            {hint && <span className="text-muted-foreground ml-1">({hint})</span>}
+          </Label>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="booking-toggle"
+              checked={bookingEnabled}
+              onCheckedChange={setBookingEnabled}
+            />
+          </div>
+        </div>
+      );
+    }
     
     const fieldKey = callerId 
       ? field.key.replace('shop_data.call_modes.tawe_zz001', '').replace('shop_data.get_num.tawe_zz001', '').replace(/^\./, '')
@@ -451,9 +469,18 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       !f.key.includes('get_num.tawe_zz001') &&
       !f.key.includes('callers.tawe_zz001') &&
       !f.key.includes('google_map') &&
+      !f.key.startsWith('shop_data.booking.') && // Exclude booking child fields
       f.key !== 'shop_data.call_modes' &&
       f.key !== 'shop_data.get_num' &&
       f.key !== 'shop_data.callers'
+    );
+  };
+
+  // Get booking child fields
+  const getBookingFields = () => {
+    return schema.filter(f => 
+      f.key.startsWith('shop_data.booking.') && 
+      f.key !== 'shop_data.booking'
     );
   };
 
@@ -486,14 +513,18 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            {getBaseFields().map(field => {
-              // Handle booking conditional rendering
-              if (field.key.includes('booking.') && field.key !== 'shop_data.booking') {
-                if (!formData.shop_data.booking.booking) return null;
-              }
-              return renderField(field);
-            })}
+            {getBaseFields().map(field => renderField(field))}
           </div>
+          
+          {/* Booking child fields - conditionally rendered */}
+          {bookingEnabled && (
+            <div className="mt-4 p-4 border rounded-lg bg-muted/30 space-y-4">
+              <h3 className="text-sm font-semibold text-primary">預約詳細設定</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {getBookingFields().map(field => renderField(field))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
