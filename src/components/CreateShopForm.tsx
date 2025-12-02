@@ -239,6 +239,69 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     toast.success("已刪除叫號機");
   };
 
+  // Transform data before submission
+  const transformDataForBackend = (data: any) => {
+    const transformed = JSON.parse(JSON.stringify(data)); // Deep clone
+    
+    // 1. Transform booking structure (remove nested boolean, keep only the fields)
+    const bookingEnabled = data.shop_data.booking?.booking || false;
+    transformed.shop_data.booking = {
+      phone: data.shop_data.booking?.phone || "",
+      phone_hint: data.shop_data.booking?.phone_hint || "",
+      url: data.shop_data.booking?.url || "",
+      url_label: data.shop_data.booking?.url_label || ""
+    };
+    
+    // 2. Transform UUID-keyed objects to Business ID-keyed objects
+    const uuidToBusinessId: { [uuid: string]: string } = {};
+    const businessIdToName: { [businessId: string]: string } = {};
+    
+    // Extract mapping from callers (UUID -> Business ID input)
+    Object.entries(data.shop_data.callers as { [uuid: string]: string }).forEach(([uuid, userInput]) => {
+      // User input can be "businessId" or "businessId | DisplayName"
+      const parts = userInput.split('|').map(p => p.trim());
+      const businessId = parts[0]; // First part is always the business ID
+      const displayName = parts[1] || parts[0]; // Second part is name, or use ID as name
+      
+      uuidToBusinessId[uuid] = businessId;
+      businessIdToName[businessId] = displayName;
+    });
+    
+    // Transform callers
+    const newCallers: { [businessId: string]: string } = {};
+    Object.entries(data.shop_data.callers as { [uuid: string]: string }).forEach(([uuid, _]) => {
+      const businessId = uuidToBusinessId[uuid];
+      const displayName = businessIdToName[businessId];
+      newCallers[businessId] = displayName;
+    });
+    transformed.shop_data.callers = newCallers;
+    
+    // Transform call_modes
+    const newCallModes: { [businessId: string]: any } = {};
+    Object.entries(data.shop_data.call_modes as { [uuid: string]: any }).forEach(([uuid, config]) => {
+      const businessId = uuidToBusinessId[uuid];
+      if (businessId) {
+        newCallModes[businessId] = config;
+      }
+    });
+    transformed.shop_data.call_modes = newCallModes;
+    
+    // Transform get_num (preserve _type, transform UUID keys)
+    const newGetNum: { [key: string]: any } = {
+      _type: data.shop_data.get_num._type
+    };
+    Object.entries(data.shop_data.get_num as { [key: string]: any }).forEach(([key, config]) => {
+      if (key === '_type') return; // Already handled
+      const businessId = uuidToBusinessId[key];
+      if (businessId) {
+        newGetNum[businessId] = config;
+      }
+    });
+    transformed.shop_data.get_num = newGetNum;
+    
+    return transformed;
+  };
+
   // Handle submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,13 +311,16 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       return;
     }
     
+    // Transform data before submission
+    const backendPayload = transformDataForBackend(formData);
+    
     if (isDevMode) {
       console.log("=== CREATE SHOP DATA (DEV MODE) ===");
-      console.log(JSON.stringify(formData, null, 2));
+      console.log(JSON.stringify(backendPayload, null, 2));
       toast.success("資料載入成功");
     } else {
       // TODO: Implement actual API call
-      console.log("Submit to API:", formData);
+      console.log("Submit to API:", backendPayload);
       toast.success("店家已成功建立");
       onCancel();
     }
@@ -524,13 +590,17 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
                       </Button>
                     </CardHeader>
                     <CardContent className="pt-6 space-y-6">
-                      {/* Caller Name */}
+                      {/* Caller ID & Name */}
                       <div className="space-y-2">
-                        <Label>叫號機名稱</Label>
+                        <Label>叫號機 ID | 名稱</Label>
                         <Input
                           value={formData.shop_data.callers[callerId] || ""}
                           onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
+                          placeholder="例如: tawe_a010m | 超音波"
                         />
+                        <p className="text-xs text-muted-foreground">
+                          格式：業務ID | 顯示名稱（例如：tawe_a010m | Ultrasound）
+                        </p>
                       </div>
 
                       <Separator />
