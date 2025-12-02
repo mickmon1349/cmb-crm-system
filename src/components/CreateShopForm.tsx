@@ -95,6 +95,13 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
   const [callerIds, setCallerIds] = useState<string[]>([]);
   const [selectedCallerId, setSelectedCallerId] = useState<string>("");
 
+  // Initialize with one default caller
+  useEffect(() => {
+    if (schema.length > 0 && callerIds.length === 0) {
+      handleAddCaller();
+    }
+  }, [schema]);
+
   // Load schema
   useEffect(() => {
     fetch("/ui-schema-create.csv")
@@ -303,10 +310,13 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       }
     };
     
+    // Extract leaf key (last segment) for label
+    const leafKey = fieldKey ? fieldKey.split('.').pop() : field.key.split('.').pop();
+    
     return (
       <div key={field.key} className="space-y-2">
         <Label htmlFor={field.key} title={hint} className="text-sm">
-          {fieldKey || field.key.split('.').pop()}
+          {leafKey}
           {hint && <span className="text-muted-foreground ml-1">({hint})</span>}
         </Label>
         
@@ -473,86 +483,79 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
             </div>
           ) : (
             <Tabs value={selectedCallerId} onValueChange={setSelectedCallerId} className="w-full">
-              <div className="flex gap-6">
-                {/* Left Column: Caller List */}
-                <div className="w-64 space-y-2">
-                  <TabsList className="flex flex-col h-auto w-full">
-                    {callerIds.map((callerId, index) => (
-                      <TabsTrigger 
-                        key={callerId} 
-                        value={callerId}
-                        className="w-full justify-start text-left"
-                      >
-                        {formData.shop_data.callers[callerId] || `叫號機 ${index + 1}`}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  <Button
-                    type="button"
-                    onClick={handleAddCaller}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    新增叫號機
-                  </Button>
-                </div>
-
-                {/* Right Column: Caller Details */}
-                <div className="flex-1">
+              {/* Horizontal Tabs: TabsList on top */}
+              <div className="flex items-center justify-between mb-4">
+                <TabsList className="inline-flex h-10">
                   {callerIds.map((callerId, index) => (
-                    <TabsContent key={callerId} value={callerId} className="mt-0">
-                      <Card className="border-2 border-primary/20">
-                        <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
-                          <div className="space-y-1">
-                            <CardTitle className="text-base text-primary">
-                              叫號機 #{index + 1}
-                            </CardTitle>
-                            <p className="text-xs text-muted-foreground">UUID: {callerId}</p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteCaller(callerId)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
-                          {/* Caller Name */}
-                          <div className="space-y-2">
-                            <Label>叫號機名稱</Label>
-                            <Input
-                              value={formData.shop_data.callers[callerId] || ""}
-                              onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
-                            />
-                          </div>
-
-                          <Separator />
-
-                          {/* Call Modes Section */}
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">叫號模式設定 (call_modes)</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                              {getCallModeFields().map(field => renderField(field, callerId))}
-                            </div>
-                          </div>
-
-                          <Separator />
-
-                          {/* Get Num Section */}
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">取號設定 (get_num)</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                              {getGetNumFields().map(field => renderField(field, callerId))}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
+                    <TabsTrigger key={callerId} value={callerId}>
+                      {formData.shop_data.callers[callerId] || `叫號機 ${index + 1}`}
+                    </TabsTrigger>
                   ))}
-                </div>
+                </TabsList>
+                <Button
+                  type="button"
+                  onClick={handleAddCaller}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增叫號機
+                </Button>
               </div>
+
+              {/* TabsContent below */}
+              {callerIds.map((callerId, index) => (
+                <TabsContent key={callerId} value={callerId}>
+                  <Card className="border-2 border-primary/20">
+                    <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
+                      <div className="space-y-1">
+                        <CardTitle className="text-base text-primary">
+                          叫號機 #{index + 1}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground">UUID: {callerId}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteCaller(callerId)}
+                        disabled={callerIds.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-6">
+                      {/* Caller Name */}
+                      <div className="space-y-2">
+                        <Label>叫號機名稱</Label>
+                        <Input
+                          value={formData.shop_data.callers[callerId] || ""}
+                          onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Call Modes Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-primary">叫號模式設定 (call_modes)</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          {getCallModeFields().map(field => renderField(field, callerId))}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Get Num Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-primary">取號設定 (get_num)</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          {getGetNumFields().map(field => renderField(field, callerId))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
             </Tabs>
           )}
         </CardContent>
