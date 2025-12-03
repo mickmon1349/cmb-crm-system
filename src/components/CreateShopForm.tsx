@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import Papa from "papaparse";
 import pinyin from "pinyin";
 import { Plus, Trash2 } from "lucide-react";
+import { addShopData } from "@/lib/shopApi";
 
 interface SchemaField {
   num: string;
@@ -54,46 +55,56 @@ const generateUUID = (): string => {
   });
 };
 
+// Check if a value is a UUID
+const isUUID = (value: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(value);
+};
+
+// Create initial form data
+const createInitialFormData = () => ({
+  shop_id: "",
+  shop_data: {
+    active: true,
+    isMultiCaller: false,
+    name: "",
+    address: "",
+    phone: "",
+    pinyin: "",
+    vendor_id: "",
+    zone: "",
+    id: "",
+    booking: {
+      phone: "",
+      phone_hint: "",
+      url: "",
+      url_label: ""
+    },
+    callers: {},
+    call_modes: {},
+    get_num: {
+      _type: "caller"
+    },
+    google_map: {
+      address: "",
+      comment_num: 0,
+      coordinate: {
+        x: 0,
+        y: 0
+      },
+      name: "",
+      star_num: 0
+    }
+  }
+});
+
 export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCancel }) => {
   const [schema, setSchema] = useState<SchemaField[]>([]);
-  const [formData, setFormData] = useState<any>({
-    shop_id: "",
-    shop_data: {
-      active: true,
-      isMultiCaller: false,
-      name: "",
-      address: "",
-      phone: "",
-      pinyin: "",
-      vendor_id: "",
-      zone: "",
-      id: "",
-      booking: {
-        phone: "",
-        phone_hint: "",
-        url: "",
-        url_label: ""
-      },
-      callers: {},
-      call_modes: {},
-      get_num: {
-        _type: "caller"
-      },
-      google_map: {
-        address: "",
-        comment_num: 0,
-        coordinate: {
-          x: 0,
-          y: 0
-        },
-        name: "",
-        star_num: 0
-      }
-    }
-  });
+  const [formData, setFormData] = useState<any>(createInitialFormData());
   const [callerIds, setCallerIds] = useState<string[]>([]);
   const [selectedCallerId, setSelectedCallerId] = useState<string>("");
   const [bookingEnabled, setBookingEnabled] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Initialize with one default caller
   useEffect(() => {
@@ -169,7 +180,7 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     const newData = { ...formData };
     
     // Initialize caller name
-    newData.shop_data.callers[newCallerId] = `叫號機 ${callerIds.length + 1}`;
+    newData.shop_data.callers[newCallerId] = "";
     
     // Initialize call_modes with defaults
     newData.shop_data.call_modes[newCallerId] = {
@@ -186,7 +197,7 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       time_period_items: []
     };
     
-    // Initialize get_num with defaults (note: _external not external)
+    // Initialize get_num with defaults
     newData.shop_data.get_num[newCallerId] = {
       _external: false,
       auto_get_num: false,
@@ -239,6 +250,15 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     toast.success("已刪除叫號機");
   };
 
+  // Reset form to initial state
+  const resetForm = () => {
+    setFormData(createInitialFormData());
+    setCallerIds([]);
+    setSelectedCallerId("");
+    setBookingEnabled(false);
+    // Will trigger useEffect to add one default caller
+  };
+
   // Transform data before submission
   const transformDataForBackend = (data: any) => {
     const transformed = JSON.parse(JSON.stringify(data)); // Deep clone
@@ -258,9 +278,9 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     // Extract mapping from callers (UUID -> Business ID input)
     Object.entries(data.shop_data.callers as { [uuid: string]: string }).forEach(([uuid, userInput]) => {
       // User input can be "businessId" or "businessId | DisplayName"
-      const parts = userInput.split('|').map(p => p.trim());
-      const businessId = parts[0]; // First part is always the business ID
-      const displayName = parts[1] || parts[0]; // Second part is name, or use ID as name
+      const parts = (userInput || "").split('|').map(p => p.trim());
+      const businessId = parts[0] || uuid; // Fall back to UUID if no business ID
+      const displayName = parts[1] || parts[0] || ""; // Second part is name, or use ID as name
       
       uuidToBusinessId[uuid] = businessId;
       businessIdToName[businessId] = displayName;
@@ -298,11 +318,14 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     });
     transformed.shop_data.get_num = newGetNum;
     
+    // 3. Clean up: remove any fields where default matches hint pattern
+    // (Smart default cleanup - if default value matches hint in parentheses, clear it)
+    
     return transformed;
   };
 
   // Handle submit
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.shop_id.trim()) {
@@ -317,12 +340,30 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       console.log("=== CREATE SHOP DATA (DEV MODE) ===");
       console.log(JSON.stringify(backendPayload, null, 2));
       toast.success("資料載入成功");
+      resetForm();
     } else {
-      // TODO: Implement actual API call
-      console.log("Submit to API:", backendPayload);
-      toast.success("店家已成功建立");
-      onCancel();
+      setIsSubmitting(true);
+      try {
+        const response = await addShopData(backendPayload);
+        if (response.success) {
+          toast.success("店家已成功建立");
+          resetForm();
+          onCancel();
+        }
+        // Error handling is done in shopApi
+      } finally {
+        setIsSubmitting(false);
+      }
     }
+  };
+
+  // Check if a field key should be hidden (internal fields like _type, _external)
+  const shouldHideField = (key: string): boolean => {
+    // Hide _type field from get_num (it's rendered separately)
+    if (key === 'shop_data.get_num._type') return true;
+    // Hide _external field (internal use only)
+    if (key.endsWith('._external')) return true;
+    return false;
   };
 
   // Render field based on schema
@@ -332,6 +373,9 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     const defaultValue = field.default;
     
     if (inputType === "N/A") return null;
+    
+    // Skip hidden internal fields
+    if (shouldHideField(field.key)) return null;
     
     // Handle booking toggle separately
     if (field.key === 'shop_data.booking') {
@@ -369,14 +413,18 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       value = getNestedValue(formData, field.key);
     }
     
-    // Apply default if value is undefined
+    // Apply default if value is undefined (Smart default: skip if default matches hint)
     if (value === undefined && defaultValue) {
-      if (inputType === "boolean" || inputType === "switch-toggle") {
-        value = String(defaultValue).toLowerCase() === "true";
-      } else if (inputType === "number") {
-        value = parseInt(defaultValue) || 0;
-      } else {
-        value = defaultValue;
+      // Check if default matches hint pattern - if so, treat as placeholder
+      const hintMatch = hint && defaultValue === hint;
+      if (!hintMatch) {
+        if (inputType === "boolean" || inputType === "switch-toggle") {
+          value = String(defaultValue).toLowerCase() === "true";
+        } else if (inputType === "number") {
+          value = parseInt(defaultValue) || 0;
+        } else {
+          value = defaultValue;
+        }
       }
     }
     
@@ -472,7 +520,8 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       !f.key.startsWith('shop_data.booking.') && // Exclude booking child fields
       f.key !== 'shop_data.call_modes' &&
       f.key !== 'shop_data.get_num' &&
-      f.key !== 'shop_data.callers'
+      f.key !== 'shop_data.callers' &&
+      f.key !== 'shop_data.get_num._type' // Exclude _type, rendered separately
     );
   };
 
@@ -492,17 +541,26 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     );
   };
 
-  // Get caller-specific fields for get_num (excluding _type which is static)
+  // Get caller-specific fields for get_num (excluding _type and _external)
   const getGetNumFields = () => {
     return schema.filter(f => 
       f.key.includes('get_num.tawe_zz001') &&
-      !f.key.includes('get_num._type')
+      !f.key.includes('get_num._type') &&
+      !f.key.endsWith('._external')
     );
   };
 
   // Get the _type field for get_num
   const getGetNumTypeField = () => {
     return schema.find(f => f.key === 'shop_data.get_num._type');
+  };
+
+  // Get caller display name (extract name part from "id | name" format)
+  const getCallerDisplayName = (callerId: string, index: number): string => {
+    const value = formData.shop_data.callers[callerId] || "";
+    if (!value) return `叫號機 ${index + 1}`;
+    const parts = value.split('|').map((p: string) => p.trim());
+    return parts[1] || parts[0] || `叫號機 ${index + 1}`;
   };
 
   return (
@@ -585,7 +643,7 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
                 <TabsList className="inline-flex h-10">
                   {callerIds.map((callerId, index) => (
                     <TabsTrigger key={callerId} value={callerId}>
-                      {formData.shop_data.callers[callerId] || `叫號機 ${index + 1}`}
+                      {getCallerDisplayName(callerId, index)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -608,7 +666,6 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
                         <CardTitle className="text-base text-primary">
                           叫號機 #{index + 1}
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground">UUID: {callerId}</p>
                       </div>
                       <Button
                         type="button"
@@ -666,8 +723,8 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
         <Button type="button" variant="outline" onClick={onCancel}>
           取消
         </Button>
-        <Button type="submit" className="bg-primary hover:bg-primary/90">
-          確認送出
+        <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isSubmitting}>
+          {isSubmitting ? "送出中..." : "確認送出"}
         </Button>
       </div>
     </form>
