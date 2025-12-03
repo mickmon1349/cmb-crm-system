@@ -8,9 +8,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import Papa from "papaparse";
-import axios from "axios";
 import pinyin from "pinyin";
 import { CreateShopForm } from "@/components/CreateShopForm";
+import { getShopData, updateShopData } from "@/lib/shopApi";
 interface SchemaField {
   num: string;
   key: string;
@@ -149,12 +149,10 @@ const Index = () => {
         data = jsonData; // Use entire JSON structure (shop_id + shop_data)
         toast.success("成功載入資料 (開發模式)");
       } else {
-        // Call actual API
-        const response = await axios.post("https://line-bot-306511771181.asia-east1.run.app/get_shop_data", {
-          shop_id: shopIdInput
-        });
-        if (response.data.result !== "OK") {
-          toast.error(`查詢失敗: ${response.data.result}`);
+        // Call API through proxy
+        const response = await getShopData(shopIdInput);
+        if (!response.success) {
+          // Error handling is done in shopApi.ts
           setIsLoading(false);
           return;
         }
