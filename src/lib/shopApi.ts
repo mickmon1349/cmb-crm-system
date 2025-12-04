@@ -9,7 +9,16 @@ interface ShopApiResponse {
   detail?: string;
 }
 
-// Error code to message mapping for alerts
+// Error code to message mapping
+const ERROR_MESSAGES: { [code: string]: string } = {
+  "001": "格式錯誤",
+  "002": "找不到店家",
+  "003": "不支援此動作",
+  "006": "資料重複",
+  "009": "系統錯誤"
+};
+
+// Error code 006 requires alert dialog
 const ERROR_ALERTS: { [code: string]: (detail?: string) => void } = {
   "006": (detail) => {
     alert(`資料重複 (Data Duplicate): ${detail || "Unknown item"}`);
@@ -106,11 +115,13 @@ export const updateShopData = async (shopData: any): Promise<ShopApiResponse> =>
 const handleApiError = (response: ShopApiResponse) => {
   const { errorCode, error, detail } = response;
 
+  // Use mapped error messages
+  const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode] || error || "系統錯誤") : (error || "系統錯誤");
+
+  // Special handling for error code 006 (alert dialog)
   if (errorCode && ERROR_ALERTS[errorCode]) {
     ERROR_ALERTS[errorCode](detail);
-  } else if (error) {
-    toast.error(error);
   } else {
-    toast.error("系統錯誤");
+    toast.error(errorMessage);
   }
 };

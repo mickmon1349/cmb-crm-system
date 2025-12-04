@@ -418,7 +418,7 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
       // Check if default matches hint pattern - if so, treat as placeholder
       const hintMatch = hint && defaultValue === hint;
       if (!hintMatch) {
-        if (inputType === "boolean" || inputType === "switch-toggle") {
+        if (inputType === "boolean" || inputType === "switch-toggle" || inputType === "checkbox") {
           value = String(defaultValue).toLowerCase() === "true";
         } else if (inputType === "number") {
           value = parseInt(defaultValue) || 0;
@@ -452,7 +452,7 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
           {hint && <span className="text-muted-foreground ml-1">({hint})</span>}
         </Label>
         
-        {(inputType === "boolean" || inputType === "switch-toggle") && (
+        {(inputType === "boolean" || inputType === "switch-toggle" || inputType === "checkbox") && (
           <div className="flex items-center space-x-2">
             <Switch
               id={field.key}
