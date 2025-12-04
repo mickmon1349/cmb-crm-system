@@ -223,8 +223,8 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
     if (inputType === "N/A") return null;
     if (shouldHideField(field.key)) return null;
     
-    // Handle booking toggle
-    if (field.key === 'shop_data.booking') {
+  // Handle booking toggle (N/A type means it's a container with toggle)
+    if (field.key === 'shop_data.booking' && inputType === 'N/A') {
       return (
         <div key={field.key} className="space-y-2">
           <Label className="text-sm">預約設定</Label>
@@ -237,6 +237,9 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
         </div>
       );
     }
+    
+    // Skip shop_id in base fields (already shown at top)
+    if (field.key === 'shop_id') return null;
     
     const fieldKey = callerId 
       ? field.key
@@ -289,7 +292,7 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
           {hint && <span className="text-muted-foreground ml-1 text-xs">({hint})</span>}
         </Label>
         
-        {(inputType === "checkbox" || inputType === "boolean") && (
+        {inputType === "checkbox" && (
           <div className="flex items-center space-x-2">
             <Switch
               checked={value === true || value === "TRUE" || value === "true"}
@@ -334,7 +337,7 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
     );
   };
 
-  // Get base fields (excluding dynamic caller fields and google_map)
+  // Get base fields (excluding dynamic caller fields, google_map, and internal)
   const getBaseFields = () => {
     return schema.filter(f => 
       !f.key.includes('call_modes.tawe_zz00') && 
@@ -342,6 +345,10 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
       !f.key.includes('callers.tawe_zz00') &&
       !f.key.includes('google_map') &&
       !f.key.startsWith('shop_data.booking.') &&
+      f.key !== 'shop_id' && // Skip shop_id - shown separately at top
+      f.key !== 'shop_data' && // Skip container
+      f.key !== 'shop_data.booking' && // Skip booking container - rendered separately
+      f.key !== 'shop_data.isMultiCaller' && // Skip isMultiCaller - rendered separately
       f.key !== 'shop_data.call_modes' &&
       f.key !== 'shop_data.get_num' &&
       f.key !== 'shop_data.callers' &&
@@ -433,6 +440,17 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
               
               <div className="grid grid-cols-2 gap-4">
                 {getBaseFields().map(field => renderField(field))}
+              </div>
+              
+              {/* Booking Toggle */}
+              <div className="space-y-2">
+                <Label className="text-sm">預約設定</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={bookingEnabled}
+                    onCheckedChange={setBookingEnabled}
+                  />
+                </div>
               </div>
               
               {/* isMultiCaller - Read-only */}
