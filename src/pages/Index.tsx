@@ -156,7 +156,11 @@ const Index = () => {
           setIsLoading(false);
           return;
         }
-        data = response.data; // Use entire response (shop_id + shop_data)
+        // Construct proper data structure: response.data is shop_data content
+        data = {
+          shop_id: shopIdInput,
+          shop_data: response.data
+        };
         toast.success("成功載入資料");
       }
 
