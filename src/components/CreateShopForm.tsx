@@ -274,16 +274,24 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
     // 2. Transform UUID-keyed objects to Business ID-keyed objects
     const uuidToBusinessId: { [uuid: string]: string } = {};
     const businessIdToName: { [businessId: string]: string } = {};
+    const isMultiCaller = data.shop_data.isMultiCaller;
     
     // Extract mapping from callers (UUID -> Business ID input)
     Object.entries(data.shop_data.callers as { [uuid: string]: string }).forEach(([uuid, userInput]) => {
-      // User input can be "businessId" or "businessId | DisplayName"
-      const parts = (userInput || "").split('|').map(p => p.trim());
-      const businessId = parts[0] || uuid; // Fall back to UUID if no business ID
-      const displayName = parts[1] || parts[0] || ""; // Second part is name, or use ID as name
-      
-      uuidToBusinessId[uuid] = businessId;
-      businessIdToName[businessId] = displayName;
+      // For single caller (isMultiCaller = false), use shop_id as the business ID
+      if (!isMultiCaller) {
+        const shopId = data.shop_id || uuid;
+        uuidToBusinessId[uuid] = shopId;
+        businessIdToName[shopId] = ""; // No display name for single caller
+      } else {
+        // User input can be "businessId" or "businessId | DisplayName"
+        const parts = (userInput || "").split('|').map(p => p.trim());
+        const businessId = parts[0] || uuid; // Fall back to UUID if no business ID
+        const displayName = parts[1] || parts[0] || ""; // Second part is name, or use ID as name
+        
+        uuidToBusinessId[uuid] = businessId;
+        businessIdToName[businessId] = displayName;
+      }
     });
     
     // Transform callers
@@ -678,20 +686,23 @@ export const CreateShopForm: React.FC<CreateShopFormProps> = ({ isDevMode, onCan
                       </Button>
                     </CardHeader>
                     <CardContent className="pt-6 space-y-6">
-                      {/* Caller ID & Name */}
-                      <div className="space-y-2">
-                        <Label>叫號機 ID | 名稱</Label>
-                        <Input
-                          value={formData.shop_data.callers[callerId] || ""}
-                          onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
-                          placeholder="例如: tawe_a010m | 超音波"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          格式：業務ID | 顯示名稱（例如：tawe_a010m | Ultrasound）
-                        </p>
-                      </div>
-
-                      <Separator />
+                      {/* Caller ID & Name - Only show when isMultiCaller is true */}
+                      {formData.shop_data.isMultiCaller && (
+                        <>
+                          <div className="space-y-2">
+                            <Label>叫號機 ID | 名稱</Label>
+                            <Input
+                              value={formData.shop_data.callers[callerId] || ""}
+                              onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
+                              placeholder="例如: tawe_a010m | 超音波"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              格式：業務ID | 顯示名稱（例如：tawe_a010m | Ultrasound）
+                            </p>
+                          </div>
+                          <Separator />
+                        </>
+                      )}
 
                       {/* Call Modes Section */}
                       <div className="space-y-4">
