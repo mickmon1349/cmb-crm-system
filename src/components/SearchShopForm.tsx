@@ -20,7 +20,7 @@ interface SchemaField {
   class: string;
   describe: string;
   default: string;
-  "key之參數hint說明": string;
+  hint: string;
 }
 
 interface SearchShopFormProps {
@@ -64,7 +64,7 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
 
   // Load schema from CSV
   useEffect(() => {
-    fetch("/ui-schema.csv")
+    fetch("/ui-schema-create.csv")
       .then(response => response.text())
       .then(csvText => {
         Papa.parse(csvText, {
@@ -218,44 +218,29 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
   // Render field with sparse display logic
   const renderField = (field: SchemaField, callerId?: string) => {
     const inputType = field["Input Type"];
-    const hint = field["key之參數hint說明"];
+    const hint = field.hint;
     
     if (inputType === "N/A") return null;
     if (shouldHideField(field.key)) return null;
     
-  // Handle booking toggle (N/A type means it's a container with toggle)
-    if (field.key === 'shop_data.booking' && inputType === 'N/A') {
-      return (
-        <div key={field.key} className="space-y-2">
-          <Label className="text-sm">預約設定</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={bookingEnabled}
-              onCheckedChange={setBookingEnabled}
-            />
-          </div>
-        </div>
-      );
-    }
-    
     // Skip shop_id in base fields (already shown at top)
     if (field.key === 'shop_id') return null;
     
-    const fieldKey = callerId 
-      ? field.key
-          .replace(/shop_data\.call_modes\.[^.]+\./, '')
-          .replace(/shop_data\.get_num\.[^.]+\./, '')
-          .replace(/shop_data\.callers\.[^.]+/, '')
-      : field.key;
+    // Extract the property name from the template key
+    const getPropertyName = (key: string): string => {
+      // Extract last segment after template patterns
+      const parts = key.split('.');
+      return parts[parts.length - 1];
+    };
+    
+    const propertyName = getPropertyName(field.key);
     
     let value: any;
     if (callerId) {
       if (field.key.includes('call_modes.')) {
-        const cleanKey = field.key.split('.').pop() || '';
-        value = formData?.shop_data?.call_modes?.[callerId]?.[cleanKey];
+        value = formData?.shop_data?.call_modes?.[callerId]?.[propertyName];
       } else if (field.key.includes('get_num.') && !field.key.includes('._type')) {
-        const cleanKey = field.key.split('.').pop() || '';
-        value = formData?.shop_data?.get_num?.[callerId]?.[cleanKey];
+        value = formData?.shop_data?.get_num?.[callerId]?.[propertyName];
       } else if (field.key.includes('callers.')) {
         value = formData?.shop_data?.callers?.[callerId];
       }
@@ -263,18 +248,18 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
       value = getNestedValue(formData, field.key);
     }
     
-    // SPARSE DISPLAY: Skip rendering if value is empty
-    if (isEmpty(value) && inputType !== "checkbox" && inputType !== "boolean") {
+    // SPARSE DISPLAY: Skip rendering if value is empty (except booleans)
+    const isBooleanType = inputType === "boolean" || inputType === "switch-toggle" || inputType === "checkbox";
+    if (isEmpty(value) && !isBooleanType) {
       return null;
     }
     
     const handleFieldChange = (newValue: any) => {
       if (callerId) {
-        const cleanKey = field.key.split('.').pop() || '';
         if (field.key.includes('call_modes.')) {
-          handleCallerChange(callerId, 'call_modes', cleanKey, newValue);
+          handleCallerChange(callerId, 'call_modes', propertyName, newValue);
         } else if (field.key.includes('get_num.')) {
-          handleCallerChange(callerId, 'get_num', cleanKey, newValue);
+          handleCallerChange(callerId, 'get_num', propertyName, newValue);
         } else if (field.key.includes('callers.')) {
           handleCallerChange(callerId, 'callers', '', newValue);
         }
@@ -283,16 +268,19 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
       }
     };
     
-    const leafKey = field.key.split('.').pop() || field.key;
+    // Generate unique key for React
+    const uniqueKey = callerId 
+      ? `${callerId}-${propertyName}` 
+      : field.key;
     
     return (
-      <div key={`${field.key}-${callerId || 'base'}`} className="space-y-2">
+      <div key={uniqueKey} className="space-y-2">
         <Label title={hint} className="text-sm">
-          {leafKey}
+          {propertyName}
           {hint && <span className="text-muted-foreground ml-1 text-xs">({hint})</span>}
         </Label>
         
-        {inputType === "checkbox" && (
+        {isBooleanType && (
           <div className="flex items-center space-x-2">
             <Switch
               checked={value === true || value === "TRUE" || value === "true"}
@@ -305,12 +293,12 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
           <RadioGroup value={value || ""} onValueChange={handleFieldChange}>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="random" id={`${field.key}-${callerId}-random`} />
-                <Label htmlFor={`${field.key}-${callerId}-random`}>random</Label>
+                <RadioGroupItem value="random" id={`${uniqueKey}-random`} />
+                <Label htmlFor={`${uniqueKey}-random`}>random</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="sequential" id={`${field.key}-${callerId}-sequential`} />
-                <Label htmlFor={`${field.key}-${callerId}-sequential`}>sequential</Label>
+                <RadioGroupItem value="sequential" id={`${uniqueKey}-sequential`} />
+                <Label htmlFor={`${uniqueKey}-sequential`}>sequential</Label>
               </div>
             </div>
           </RadioGroup>
@@ -340,20 +328,19 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
   // Get base fields (excluding dynamic caller fields, google_map, and internal)
   const getBaseFields = () => {
     return schema.filter(f => 
-      !f.key.includes('call_modes.tawe_zz00') && 
-      !f.key.includes('get_num.tawe_zz00') &&
-      !f.key.includes('callers.tawe_zz00') &&
+      !f.key.includes('call_modes.tawe_zz001') && 
+      !f.key.includes('get_num.tawe_zz001') &&
+      !f.key.includes('callers.tawe_zz001') &&
       !f.key.includes('google_map') &&
       !f.key.startsWith('shop_data.booking.') &&
-      f.key !== 'shop_id' && // Skip shop_id - shown separately at top
-      f.key !== 'shop_data' && // Skip container
-      f.key !== 'shop_data.booking' && // Skip booking container - rendered separately
-      f.key !== 'shop_data.isMultiCaller' && // Skip isMultiCaller - rendered separately
+      f.key !== 'shop_id' &&
+      f.key !== 'shop_data' &&
+      f.key !== 'shop_data.booking' &&
+      f.key !== 'shop_data.isMultiCaller' &&
       f.key !== 'shop_data.call_modes' &&
       f.key !== 'shop_data.get_num' &&
       f.key !== 'shop_data.callers' &&
       f.key !== 'shop_data.get_num._type' &&
-      f.key !== 'shop_data.get_num.type' &&
       f["Input Type"] !== "N/A"
     );
   };
@@ -366,23 +353,37 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
     );
   };
 
-  // Get caller-specific fields for call_modes
+  // Get caller-specific fields for call_modes - use exact template pattern
   const getCallModeFields = () => {
-    return schema.filter(f => 
-      f.key.includes('call_modes.tawe_zz00') && 
-      !f.key.includes('set_params') &&
-      f["Input Type"] !== "N/A"
-    );
+    const seen = new Set<string>();
+    return schema.filter(f => {
+      if (!f.key.includes('call_modes.tawe_zz001.')) return false;
+      if (f.key.includes('set_params')) return false;
+      if (f["Input Type"] === "N/A") return false;
+      
+      // Deduplicate by property name
+      const propertyName = f.key.split('.').pop() || '';
+      if (seen.has(propertyName)) return false;
+      seen.add(propertyName);
+      return true;
+    });
   };
 
-  // Get caller-specific fields for get_num
+  // Get caller-specific fields for get_num - use exact template pattern
   const getGetNumFields = () => {
-    return schema.filter(f => 
-      f.key.includes('get_num.tawe_zz00') &&
-      !f.key.includes('._type') &&
-      !f.key.endsWith('._external') &&
-      f["Input Type"] !== "N/A"
-    );
+    const seen = new Set<string>();
+    return schema.filter(f => {
+      if (!f.key.includes('get_num.tawe_zz001.')) return false;
+      if (f.key.includes('._type')) return false;
+      if (f.key.endsWith('._external')) return false;
+      if (f["Input Type"] === "N/A") return false;
+      
+      // Deduplicate by property name
+      const propertyName = f.key.split('.').pop() || '';
+      if (seen.has(propertyName)) return false;
+      seen.add(propertyName);
+      return true;
+    });
   };
 
   // Get caller display name
