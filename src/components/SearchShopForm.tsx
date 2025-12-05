@@ -139,21 +139,59 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
     }
   };
 
+  // Transform data for backend - ensure proper structure
+  const transformDataForBackend = (data: any) => {
+    const transformed = JSON.parse(JSON.stringify(data)); // Deep clone
+    
+    // Ensure booking structure is an object (not boolean)
+    if (typeof transformed.shop_data.booking === 'boolean' || !transformed.shop_data.booking) {
+      transformed.shop_data.booking = {
+        phone: "",
+        phone_hint: "",
+        url: "",
+        url_label: ""
+      };
+    }
+    
+    // Ensure proper caller structure - value should be display name, not ID
+    // For search form, data is already keyed by business ID, so just ensure values are names
+    const callers = transformed.shop_data.callers || {};
+    const newCallers: { [businessId: string]: string } = {};
+    
+    Object.entries(callers).forEach(([businessId, value]) => {
+      // If value looks like "businessId | DisplayName", extract display name
+      const strValue = String(value || "");
+      if (strValue.includes('|')) {
+        const parts = strValue.split('|').map(p => p.trim());
+        newCallers[businessId] = parts[1] || parts[0] || "";
+      } else {
+        newCallers[businessId] = strValue;
+      }
+    });
+    transformed.shop_data.callers = newCallers;
+    
+    return transformed;
+  };
+
   // Handle Save
   const handleSave = async () => {
     if (!formData) {
       toast.error("沒有資料可儲存");
       return;
     }
+    
+    // Transform data before submission
+    const backendPayload = transformDataForBackend(formData);
+    
     if (isDevMode) {
       console.log("=== SAVE SHOP DATA (DEV MODE) ===");
-      console.log(JSON.stringify(formData, null, 2));
+      console.log(JSON.stringify(backendPayload, null, 2));
       toast.info("開發模式下不會實際儲存至伺服器");
       return;
     }
     setIsSaving(true);
     try {
-      const response = await updateShopData(formData);
+      const response = await updateShopData(backendPayload);
       if (response.success) {
         toast.success("儲存成功");
       }
@@ -534,16 +572,19 @@ export const SearchShopForm: React.FC<SearchShopFormProps> = ({ isDevMode }) => 
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-6">
-                          {/* Caller Name */}
-                          <div className="space-y-2">
-                            <Label>叫號機名稱</Label>
-                            <Input
-                              value={formData?.shop_data?.callers?.[callerId] || ""}
-                              onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
-                            />
-                          </div>
-
-                          <Separator />
+                          {/* Caller Name - Only show when isMultiCaller is true */}
+                          {isMultiCaller && (
+                            <>
+                              <div className="space-y-2">
+                                <Label>叫號機名稱</Label>
+                                <Input
+                                  value={formData?.shop_data?.callers?.[callerId] || ""}
+                                  onChange={(e) => handleCallerChange(callerId, 'callers', '', e.target.value)}
+                                />
+                              </div>
+                              <Separator />
+                            </>
+                          )}
 
                           {/* Call Modes Section */}
                           <div className="space-y-4">
